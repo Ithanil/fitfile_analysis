@@ -22,7 +22,7 @@ for name in ma_names:
     mavgs_2[name] = ([], [])
 it = 0 # general iteration counter
 
-# Iterate over all messages of type "record"
+# Main loop for data extraction
 for record in fitfile.get_messages("record"):
 
     # pre-extract timestamp of the record
@@ -51,7 +51,7 @@ for record in fitfile.get_messages("record"):
     # remember timestamp
     last_time = cur_time
 
-    # Records can contain multiple pieces of data (ex: timestamp, latitude, longitude, etc)
+    # extract all data from record
     for entry in record:
 
         # --- Pre-Processing of entry values ---
