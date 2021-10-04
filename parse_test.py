@@ -126,6 +126,31 @@ for name in ma_names:
     mavgs_1[name] = (mavgs_1[name][0], array(mavgs_1[name][1]))
     mavgs_2[name] = (mavgs_2[name][0], array(mavgs_2[name][1]))
 
+# test normalized power computation with different moving average window lengths
+ap_0 = 0
+np_0 = 0
+cnt = 0
+for mp in mavgs_0['power'][1]:
+    ap_0 += mp
+    np_0 += mp**4
+    cnt += 1
+ap_0 /= cnt
+np_0 = (np_0 / cnt)**0.25
+print('AP0', ap_0)
+print('NP0', np_0)
+
+ap_1 = 0
+np_1 = 0
+cnt = 0
+for mp in mavgs_1['power'][1]:
+    ap_1 += mp
+    np_1 += mp**4
+    cnt += 1
+ap_1 /= cnt
+np_1 = (np_1 / cnt)**0.25
+print('AP1', ap_1)
+print('NP1', np_1)
+
 for name in ma_names:
     print(name, len(mavgs_1[name][0]), len(mavgs_1[name][1]), len(mavgs_2[name][0]), len(mavgs_2[name][1]))
     figure()
