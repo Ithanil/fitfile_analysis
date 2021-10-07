@@ -7,7 +7,8 @@ from pylab import *
 ma_len_0 = 3
 ma_len_1 = 30
 ma_len_2 = 300
-ma_names = ['speed', 'power', 'heart_rate', 'cadence', 'left_right_balance']
+ma_names = ['speed', 'power', 'heart_rate', 'cadence', 'left_right_balance', 'core_temperature', 'skin_temperature']
+verbose = False
 
 # Load the FIT file
 fitfile = fitparse.FitFile(sys.argv[1])
@@ -75,11 +76,12 @@ for record in fitfile.get_messages("record"):
             data_value *= 3.6
 
         # Print the name and value of the data (and the units if it has any)
-        #if entry.units:
-        #    print(" * {}: {} ({})".format(entry.name, data_value, entry.units))
-        #else:
-        #    print(" * {}: {}".format(entry.name, data_value))
-        #print("---")
+        if verbose:
+            if entry.units:
+                print(" * {}: {} ({})".format(entry.name, data_value, entry.units))
+            else:
+                print(" * {}: {}".format(entry.name, data_value))
+            print("---")
 
         # ----------
 
@@ -159,5 +161,10 @@ for name in ma_names:
     plot(mavgs_0[name][0], mavgs_0[name][1], '*', markersize = 4)
     plot(mavgs_1[name][0], mavgs_1[name][1], '*', markersize = 4)
     plot(mavgs_2[name][0], mavgs_2[name][1], '*', markersize = 4)
+
+for name in ma_names:
+    figure()
+    title(name)
+    plot(mavgs_0[name][0], mavgs_0[name][1])
 
 show()
