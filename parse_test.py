@@ -167,4 +167,28 @@ for name in ma_names:
     title(name)
     plot(mavgs_0[name][0], mavgs_0[name][1])
 
+
+# Time correlation function test
+corr_pairs = [('power', 'heart_rate'), ('power', 'power')]
+for cpair in corr_pairs:
+    len_arr = len(mavgs_0[cpair[0]][1])
+    if len_arr == len(mavgs_0[cpair[1]][1]):
+        len_corr = len_arr//8
+        len_arr_red = len_arr - len_corr
+        tcorr = zeros(len_corr)
+        av0 = 0.
+        av1 = zeros(len_corr)
+        for it_arr in range(len_arr_red):
+            av0 += mavgs_0[cpair[0]][1][it_arr]
+            for it_corr in range(len_corr):
+                tcorr[it_corr] += mavgs_0[cpair[0]][1][it_arr]*mavgs_0[cpair[1]][1][it_arr + it_corr]
+                av1[it_corr] += mavgs_0[cpair[1]][1][it_arr + it_corr]
+
+        av0 /= len_arr_red
+        for it_corr in range(len_corr):
+            tcorr[it_corr] = tcorr[it_corr] / len_arr_red - av0*av1[it_corr]/len_arr_red
+
+        figure()
+        plot(tcorr)
+
 show()
