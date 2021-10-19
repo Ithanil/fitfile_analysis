@@ -4,9 +4,9 @@ import fitparse
 from pylab import *
 
 # settings
-ma_len_0 = 3
+ma_len_0 = 10
 ma_len_1 = 30
-ma_len_2 = 300
+ma_len_2 = 90
 ma_names = ['speed', 'power', 'heart_rate', 'cadence', 'left_right_balance']
 verbose = False
 
@@ -132,6 +132,15 @@ for itf in [0,1]:
         mavgs_1[itf][name] = (mavgs_1[itf][name][0], array(mavgs_1[itf][name][1]))
         mavgs_2[itf][name] = (mavgs_2[itf][name][0], array(mavgs_2[itf][name][1]))
 
+# create scaled power array for second file
+if len(sys.argv) >= 4:
+    scaling_fac = float(sys.argv[3])
+else:
+    scaling_fac = 1.0
+pw_0_scaled = scaling_fac*array(mavgs_0[1]['power'][1])
+pw_1_scaled = scaling_fac*array(mavgs_1[1]['power'][1])
+pw_2_scaled = scaling_fac*array(mavgs_2[1]['power'][1])
+
 
 for name in ma_names:
     figure()
@@ -141,15 +150,27 @@ for name in ma_names:
     legend([sys.argv[1], sys.argv[2]])
 
 figure()
-title('Powers 30 Sec MA')
+title('Powers ' + str(ma_len_1) + ' Sec MA')
 plot(mavgs_1[0]['power'][0], mavgs_1[0]['power'][1])
 plot(mavgs_1[1]['power'][0], mavgs_1[1]['power'][1])
 legend([sys.argv[1], sys.argv[2]])
 
 figure()
-title('Powers 300 Sec MA')
+title('Powers '  + str(ma_len_2) + ' Sec MA')
 plot(mavgs_2[0]['power'][0], mavgs_2[0]['power'][1])
 plot(mavgs_2[1]['power'][0], mavgs_2[1]['power'][1])
+legend([sys.argv[1], sys.argv[2]])
+
+figure()
+title('Powers with Scaling, ' + str(ma_len_1) + ' Sec MA')
+plot(mavgs_1[0]['power'][0], mavgs_1[0]['power'][1])
+plot(mavgs_1[1]['power'][0], pw_1_scaled)
+legend([sys.argv[1], sys.argv[2]])
+
+figure()
+title('Powers with Scaling, '  + str(ma_len_2) + ' Sec MA')
+plot(mavgs_2[0]['power'][0], mavgs_2[0]['power'][1])
+plot(mavgs_2[1]['power'][0], pw_2_scaled)
 legend([sys.argv[1], sys.argv[2]])
 
 show()
