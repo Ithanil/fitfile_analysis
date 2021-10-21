@@ -90,8 +90,9 @@ for itf, fitfile in enumerate(fitfiles):
 
             # put desired entry data into dictionaries
             if entry.name not in data[itf].keys():
-                data[itf][entry.name] = []
-            data[itf][entry.name].append(data_value)
+                data[itf][entry.name] = ([], [])
+            data[itf][entry.name][0].append(cur_time)
+            data[itf][entry.name][1].append(data_value)
 
             # if entry is not timestamp, deal with moving averages
             if entry.name != 'timestamp':
@@ -128,6 +129,7 @@ print(data[0].keys())
 # convert all ma data to numpy array
 for itf in [0,1]:
     for name in ma_names:
+        data[itf][name] = (array(data[itf][name][0]), array(data[itf][name][1]))
         mavgs_0[itf][name] = (mavgs_0[itf][name][0], array(mavgs_0[itf][name][1]))
         mavgs_1[itf][name] = (mavgs_1[itf][name][0], array(mavgs_1[itf][name][1]))
         mavgs_2[itf][name] = (mavgs_2[itf][name][0], array(mavgs_2[itf][name][1]))
@@ -141,12 +143,26 @@ pw_0_scaled = scaling_fac*array(mavgs_0[1]['power'][1])
 pw_1_scaled = scaling_fac*array(mavgs_1[1]['power'][1])
 pw_2_scaled = scaling_fac*array(mavgs_2[1]['power'][1])
 
+# create coupled data set only with data points from times where there exists an entry in both data streams
+coupled_data = {}
+for name in ma_names:
+    coupled_data[name] = ([], [], [])
+    itd1 = 0
+    for itd0, t0 in enumerate(data[0][name][0]):
+        while data[1][name][0][itd1] < t0 and itd1 < (len(data[1][name][0]) - 1) :
+            itd1 += 1
+        if data[1][name][0][itd1] == t0:
+            coupled_data[name][0].append(t0)
+            coupled_data[name][1].append(data[0][name][1][itd0])
+            coupled_data[name][2].append(data[1][name][1][itd1])
 
 for name in ma_names:
     figure()
     title(name)
-    plot(mavgs_0[0][name][0], mavgs_0[0][name][1])
-    plot(mavgs_0[1][name][0], mavgs_0[1][name][1])
+    #plot(mavgs_0[0][name][0], mavgs_0[0][name][1])
+    #plot(mavgs_0[1][name][0], mavgs_0[1][name][1])
+    plot(coupled_data[name][0], coupled_data[name][1])
+    plot(coupled_data[name][0], coupled_data[name][2])
     legend([sys.argv[1], sys.argv[2]])
 
 figure()
