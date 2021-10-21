@@ -129,7 +129,8 @@ print(data[0].keys())
 # convert all ma data to numpy array
 for itf in [0,1]:
     for name in ma_names:
-        data[itf][name] = (array(data[itf][name][0]), array(data[itf][name][1]))
+        if name in data[itf].keys():
+            data[itf][name] = (array(data[itf][name][0]), array(data[itf][name][1]))
         mavgs_0[itf][name] = (mavgs_0[itf][name][0], array(mavgs_0[itf][name][1]))
         mavgs_1[itf][name] = (mavgs_1[itf][name][0], array(mavgs_1[itf][name][1]))
         mavgs_2[itf][name] = (mavgs_2[itf][name][0], array(mavgs_2[itf][name][1]))
@@ -146,17 +147,35 @@ pw_2_scaled = scaling_fac*array(mavgs_2[1]['power'][1])
 # create coupled data set only with data points from times where there exists an entry in both data streams
 coupled_data = {}
 for name in ma_names:
-    coupled_data[name] = ([], [], [])
-    itd1 = 0
-    for itd0, t0 in enumerate(data[0][name][0]):
-        while data[1][name][0][itd1] < t0 and itd1 < (len(data[1][name][0]) - 1) :
-            itd1 += 1
-        if data[1][name][0][itd1] == t0:
-            coupled_data[name][0].append(t0)
-            coupled_data[name][1].append(data[0][name][1][itd0])
-            coupled_data[name][2].append(data[1][name][1][itd1])
+    if name in data[0].keys() and name in data[1].keys():
+        coupled_data[name] = ([], [], [])
+        itd1 = 0
+        for itd0, t0 in enumerate(data[0][name][0]):
+            while data[1][name][0][itd1] < t0 and itd1 < (len(data[1][name][0]) - 1) :
+                itd1 += 1
+            if data[1][name][0][itd1] == t0:
+                coupled_data[name][0].append(t0)
+                coupled_data[name][1].append(data[0][name][1][itd0])
+                coupled_data[name][2].append(data[1][name][1][itd1])
 
-for name in ma_names:
+# compute mean, mean absolute and root mean square differences
+for name in coupled_data.keys():
+    md = 0.
+    mad = 0.
+    rmsd = 0.
+    datlen = len(coupled_data[name][0])
+    for it in range(datlen):
+        diff = coupled_data[name][1][it] - coupled_data[name][2][it]
+        md += diff
+        mad += abs(diff)
+        rmsd += diff**2
+    md /= datlen
+    mad /= datlen
+    rmsd = sqrt(rmsd/datlen)
+    print(name, md, mad, rmsd)
+
+
+for name in coupled_data.keys():
     figure()
     title(name)
     #plot(mavgs_0[0][name][0], mavgs_0[0][name][1])
