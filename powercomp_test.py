@@ -158,21 +158,27 @@ for name in ma_names:
                 coupled_data[name][1].append(data[0][name][1][itd0])
                 coupled_data[name][2].append(data[1][name][1][itd1])
 
-# compute mean, mean absolute and root mean square differences
+# compute averages and mean, mean absolute and root mean square differences
 for name in coupled_data.keys():
+    avg0 = 0.
+    avg1 = 0.
     md = 0.
     mad = 0.
     rmsd = 0.
     datlen = len(coupled_data[name][0])
     for it in range(datlen):
+        avg0 += coupled_data[name][1][it]
+        avg1 += coupled_data[name][2][it]
         diff = coupled_data[name][1][it] - coupled_data[name][2][it]
         md += diff
         mad += abs(diff)
         rmsd += diff**2
+    avg0 /= datlen
+    avg1 /= datlen
     md /= datlen
     mad /= datlen
     rmsd = sqrt(rmsd/datlen)
-    print(name, md, mad, rmsd)
+    print(name, (avg0, avg1), md, mad, rmsd)
 
 
 for name in coupled_data.keys():
