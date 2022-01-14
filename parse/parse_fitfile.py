@@ -1,6 +1,4 @@
-import sys
 import fitparse
-
 from pylab import *
 
 def parse_fitfile(filename, entry_dict, verbose = False):
@@ -18,6 +16,7 @@ def parse_fitfile(filename, entry_dict, verbose = False):
     if 'slope' in entry_dict.keys():
         print('Error: Special derived quantity "slope" was present in entry_dict.')
         exit()
+
     calcSlope = True
     if 'distance' not in entry_dict.keys():
         cur_dist = 0. # at least initialize this variable
@@ -120,18 +119,14 @@ def parse_fitfile(filename, entry_dict, verbose = False):
 
             # if entry is desired, deal with moving averages
             if entry.name in ma_entry_list:
-                try:
-                    # add to current history for moving averages
-                    for it_ma, ma_len in enumerate(entry_dict[entry_name]):
-                        cur_hist[entry.name][it_ma][cont_it % ma_len] = data_value
+                # add to current history for moving averages
+                for it_ma, ma_len in enumerate(entry_dict[entry.name]):
+                    cur_hist[entry.name][it_ma][cont_it % ma_len] = data_value
 
-                        # compute moving average value if possible
-                        if cont_it >= ma_len:
-                            mov_avgs[entry.name][it_ma][0].append(tot_sec)
-                            mov_avgs[entry.name][it_ma][1].append(sum(cur_hist[entry.name][it_ma])/ma_len)
-                except:
-                    print('Error when processing entry: ', entry)
-                    exit()
+                    # compute moving average value if possible
+                    if cont_it >= ma_len:
+                        mov_avgs[entry.name][it_ma][0].append(tot_sec)
+                        mov_avgs[entry.name][it_ma][1].append(sum(cur_hist[entry.name][it_ma])/ma_len)
 
         # check if all desired entries were present
         present_entries = [entry.name for entry in record]
@@ -166,23 +161,3 @@ def parse_fitfile(filename, entry_dict, verbose = False):
             mov_avgs[ma_entry][it_ma] = (array(mov_avgs[ma_entry][it_ma][0]), array(mov_avgs[ma_entry][it_ma][1]))
 
     return data, mov_avgs
-
-
-# test
-
-entry_dict = {'speed' : [3, 30]}
-
-data, mov_avgs = parse_fitfile(sys.argv[1], entry_dict, True)
-
-print(data)
-print(mov_avgs)
-
-figure()
-plot(data['speed'])
-
-figure()
-plot(mov_avgs['speed'][0][0], mov_avgs['speed'][0][1])
-
-figure()
-plot(mov_avgs['speed'][1][0], mov_avgs['speed'][1][1])
-show()
