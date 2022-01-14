@@ -144,50 +144,57 @@ pw_0_scaled = scaling_fac*array(mavgs_0[1]['power'][1])
 pw_1_scaled = scaling_fac*array(mavgs_1[1]['power'][1])
 pw_2_scaled = scaling_fac*array(mavgs_2[1]['power'][1])
 
-# create coupled data set only with data points from times where there exists an entry in both data streams
+# create coupled data set only with data points from times where there exists an entry in both data series / moving averages
 coupled_data = {}
 for name in ma_names:
     if name in data[0].keys() and name in data[1].keys():
-        coupled_data[name] = ([], [], [])
-        itd1 = 0
-        for itd0, t0 in enumerate(data[0][name][0]):
-            while data[1][name][0][itd1] < t0 and itd1 < (len(data[1][name][0]) - 1) :
-                itd1 += 1
-            if data[1][name][0][itd1] == t0:
-                coupled_data[name][0].append(t0)
-                coupled_data[name][1].append(data[0][name][1][itd0])
-                coupled_data[name][2].append(data[1][name][1][itd1])
+        coupled_data[name] = (([], [], []), ([], [], []), ([], [], []), ([], [], [])) # data, ma0, ma1, ma2
+        its = 0
+        for series0, series1 in [(data[0][name], data[1][name]), (mavgs_0[0][name], mavgs_0[1][name]),
+                                 (mavgs_1[0][name], mavgs_1[1][name]), (mavgs_2[0][name], mavgs_2[1][name])]:
+            itd1 = 0
+            for itd0, t0 in enumerate(series0[0]):
+                while series1[0][itd1] < t0 and itd1 < (len(series1[0]) - 1) :
+                    itd1 += 1
+                if series1[0][itd1] == t0:
+                    coupled_data[name][its][0].append(t0)
+                    coupled_data[name][its][1].append(series0[1][itd0])
+                    coupled_data[name][its][2].append(series1[1][itd1])
+            its += 1
 
 # compute averages and mean, mean absolute and root mean square differences
+labels = ['raw data', 'mov avg ' + str(ma_len_0) + 's', 'mov avg '
+          + str(ma_len_1) + 's', 'mov avg ' + str(ma_len_2) + 's']
 for name in coupled_data.keys():
-    avg0 = 0.
-    avg1 = 0.
-    md = 0.
-    mad = 0.
-    rmsd = 0.
-    datlen = len(coupled_data[name][0])
-    for it in range(datlen):
-        avg0 += coupled_data[name][1][it]
-        avg1 += coupled_data[name][2][it]
-        diff = coupled_data[name][1][it] - coupled_data[name][2][it]
-        md += diff
-        mad += abs(diff)
-        rmsd += diff**2
-    avg0 /= datlen
-    avg1 /= datlen
-    md /= datlen
-    mad /= datlen
-    rmsd = sqrt(rmsd/datlen)
-    print(name, (avg0, avg1), md, mad, rmsd)
+    print('')
+    print(name + ':')
+    for it_label, cdat in enumerate(coupled_data[name]):
+        avg0 = 0.
+        avg1 = 0.
+        md = 0.
+        mad = 0.
+        rmsd = 0.
+        datlen = len(cdat[0])
+        for it in range(datlen):
+            avg0 += cdat[1][it]
+            avg1 += cdat[2][it]
+            diff = cdat[1][it] - cdat[2][it]
+            md += diff
+            mad += abs(diff)
+            rmsd += diff**2
+        avg0 /= datlen
+        avg1 /= datlen
+        md /= datlen
+        mad /= datlen
+        rmsd = sqrt(rmsd/datlen)
+        print(labels[it_label], (avg0, avg1), md, mad, rmsd)
 
 
 for name in coupled_data.keys():
     figure()
     title(name)
-    #plot(mavgs_0[0][name][0], mavgs_0[0][name][1])
-    #plot(mavgs_0[1][name][0], mavgs_0[1][name][1])
-    plot(coupled_data[name][0], coupled_data[name][1])
-    plot(coupled_data[name][0], coupled_data[name][2])
+    plot(coupled_data[name][0][0], coupled_data[name][0][1])
+    plot(coupled_data[name][0][0], coupled_data[name][0][2])
     legend([sys.argv[1], sys.argv[2]])
 
 figure()
