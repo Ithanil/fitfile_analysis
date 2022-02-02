@@ -51,7 +51,7 @@ def parse_fitfile(filename, entry_dict, verbose = False):
         for entry in record:
             if entry.name == 'timestamp':
                 cur_time = entry.value
-            elif entry.name == 'distance':
+            elif entry.name == 'distance' and entry.value != None: # quick fix, need to look into this
                 cur_dist = entry.value
             elif entry.name == 'altitude':
                 cur_alt = entry.value

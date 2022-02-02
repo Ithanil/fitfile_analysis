@@ -128,6 +128,11 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# PyCharm config folder
+.idea/
 
 # ignore all fit files
 *.fit
+
+# ignore HRV data folder
+hrv_data/
