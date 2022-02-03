@@ -3,7 +3,7 @@ from parse.parse_fitfile import parse_fitfile
 from pylab import *
 
 # Import HRV ramp fitfile
-entry_dict = {'power' : [10, 120, 90], 'heart_rate' : [1, 120]}
+entry_dict = {'power' : [10, 120, 90, 30], 'heart_rate' : [1, 120, 1]}
 data, mov_avgs = parse_fitfile(sys.argv[1], entry_dict, False)
 
 # Import and sync HR/HRV data
@@ -21,20 +21,16 @@ time_offset_hrv = time_offset + tdiff/1000.
 print('Time Offset HRV: ', time_offset_hrv)
 
 hrv_data_sec = [time_offset_hrv + (data[1] - hrv_data_timestamp0)/1000. for data in hrv_data]
-print(hrv_data_sec)
 hrv_data_hr = [data[2] for data in hrv_data]
 hrv_data_alpha = [data[-2] for data in hrv_data]
-
 print(hrv_data)
 
 # Create Alpha-1 / Power data set
 pwr_to_alpha = ([], [])
 for hrv_index, time in enumerate(hrv_data_sec):
     time_index = where(mov_avgs['power'][1][0] == int(time))[0][0]
-    print(time_index)
     pwr_to_alpha[0].append(mov_avgs['power'][1][1][time_index])
     pwr_to_alpha[1].append(hrv_data_alpha[hrv_index])
-print(pwr_to_alpha)
 
 # Create linear fit for pwr:alpha
 lin_fit_start = int(sys.argv[4])
@@ -46,11 +42,22 @@ A = vstack([x, ones(len(x))]).T
 m, c = linalg.lstsq(A, y, rcond=None)[0]
 print(m, c)
 
+# Create HR / Power data set
+pwr_to_hr = ([], [])
+for index, pwr in enumerate(mov_avgs['power'][3][1]):
+    time = mov_avgs['power'][3][0][index]
+    if time > hrv_data_sec[lin_fit_start] and time < hrv_data_sec[lin_fit_end - 1]:
+        pwr_to_hr[0].append(pwr)
+        hr_index = where(mov_avgs['heart_rate'][2][0] == int(time))[0][0]
+        pwr_to_hr[1].append(mov_avgs['heart_rate'][2][1][hr_index])
+
+
 figure()
 plot(hr_data_sec, hr_data_hr)
 plot(hrv_data_sec, hrv_data_hr, 'x')
 plot(mov_avgs['heart_rate'][1][0], mov_avgs['heart_rate'][1][1], '-')
 plot(data['seconds'], data['heart_rate'])
+
 
 figure()
 plot(pwr_to_alpha[0], pwr_to_alpha[1], 'o')
@@ -61,10 +68,12 @@ xlabel('Power (2min-Avg) [W]')
 ylabel('HRV Alpha-1')
 title('HRV Ramp: Alpha-1 vs. Power')
 
+
 figure()
-plot(data['seconds'], data['heart_rate'])
-#plot(mov_avgs['power'][0][0], mov_avgs['power'][0][1], '+')
-plot(mov_avgs['power'][2][0], mov_avgs['power'][2][1], '-')
+plot(pwr_to_hr[0], pwr_to_hr[1], 'x')
+
+figure()
+plot(pwr_to_hr[1], pwr_to_hr[0], 'x')
 
 fig = plt.figure()
 host = fig.add_subplot(111)
@@ -92,5 +101,7 @@ host.legend(handles=lns, loc='best')
 
 host.yaxis.label.set_color(p1.get_color())
 par.yaxis.label.set_color(p3.get_color())
-host.set_title('HRV ramp: HR and power') 
+host.set_title('HRV ramp: HR and power')
+
+
 show()
