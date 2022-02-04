@@ -3,7 +3,7 @@ from parse.parse_fitfile import parse_fitfile
 from pylab import *
 
 # Import HRV ramp fitfile
-entry_dict = {'power' : [10, 120, 90, 30], 'heart_rate' : [1, 120, 1]}
+entry_dict = {'power' : [10, 120, 90, 30], 'heart_rate' : [1, 30, 1]}
 data, mov_avgs = parse_fitfile(sys.argv[1], entry_dict, False)
 
 # Import and sync HR/HRV data
@@ -25,6 +25,7 @@ hrv_data_hr = [data[2] for data in hrv_data]
 hrv_data_alpha = [data[-2] for data in hrv_data]
 print(hrv_data)
 
+
 # Create Alpha-1 / Power data set
 pwr_to_alpha = ([], [])
 for hrv_index, time in enumerate(hrv_data_sec):
@@ -36,11 +37,36 @@ for hrv_index, time in enumerate(hrv_data_sec):
 lin_fit_start = int(sys.argv[4])
 lin_fit_end = int(sys.argv[5])
 pwr_to_alpha = (pwr_to_alpha[0][0:lin_fit_end], pwr_to_alpha[1][0:lin_fit_end])
-x = array(pwr_to_alpha[0][lin_fit_start:])
-y = array(pwr_to_alpha[1][lin_fit_start:])
-A = vstack([x, ones(len(x))]).T
-m, c = linalg.lstsq(A, y, rcond=None)[0]
-print(m, c)
+x_pwr = array(pwr_to_alpha[0][lin_fit_start:])
+y_pwr = array(pwr_to_alpha[1][lin_fit_start:])
+A_pwr = vstack([x_pwr, ones(len(x_pwr))]).T
+m_pwr, c_pwr = linalg.lstsq(A_pwr, y_pwr, rcond=None)[0]
+print('PWR:Alpha m: ', m_pwr, ' PWR:Alpha c: ', c_pwr)
+print('AeT Power: ', (0.75 - c_pwr)/m_pwr)
+print('AnT Power: ', (0.5 - c_pwr)/m_pwr)
+print()
+
+
+# Create Alpha-1 / HR data set
+hr_to_alpha = ([], [])
+for hrv_index, time in enumerate(hrv_data_sec):
+    time_index = where(mov_avgs['heart_rate'][1][0] == int(time))[0][0]
+    hr_to_alpha[0].append(mov_avgs['heart_rate'][1][1][time_index])
+    hr_to_alpha[1].append(hrv_data_alpha[hrv_index])
+
+# Create linear fit for hr:alpha
+lin_fit_start = int(sys.argv[4])
+lin_fit_end = int(sys.argv[5])
+hr_to_alpha = (hr_to_alpha[0][0:lin_fit_end], hr_to_alpha[1][0:lin_fit_end])
+x_hr = array(hr_to_alpha[0][lin_fit_start:])
+y_hr = array(hr_to_alpha[1][lin_fit_start:])
+A_hr = vstack([x_hr, ones(len(x_hr))]).T
+m_hr, c_hr = linalg.lstsq(A_hr, y_hr, rcond=None)[0]
+print('HR:Alpha m: ', m_hr, ' HR:Alpha c: ', c_hr)
+print('AeT HR (unreliable): ', (0.75 - c_hr)/m_hr)
+print('AnT HR (unreliable): ', (0.5 - c_hr)/m_hr)
+print()
+
 
 # Create HR / Power data set
 pwr_to_hr = ([], [])
@@ -54,19 +80,29 @@ for index, pwr in enumerate(mov_avgs['power'][3][1]):
 
 figure()
 plot(hr_data_sec, hr_data_hr)
-plot(hrv_data_sec, hrv_data_hr, 'x')
-plot(mov_avgs['heart_rate'][1][0], mov_avgs['heart_rate'][1][1], '-')
 plot(data['seconds'], data['heart_rate'])
+#plot(hrv_data_sec, hrv_data_hr, 'x')
+#plot(mov_avgs['heart_rate'][1][0], mov_avgs['heart_rate'][1][1], '-')
 
 
 figure()
 plot(pwr_to_alpha[0], pwr_to_alpha[1], 'o')
-plot(x, m*x + c)
+plot(x_pwr, m_pwr*x_pwr + c_pwr)
 plot([pwr_to_alpha[0][0], pwr_to_alpha[0][-1]], [0.75, 0.75], '--', color = 'black')
 plot([pwr_to_alpha[0][0], pwr_to_alpha[0][-1]], [0.5, 0.5], '-.', color = 'black')
 xlabel('Power (2min-Avg) [W]')
 ylabel('HRV Alpha-1')
 title('HRV Ramp: Alpha-1 vs. Power')
+
+
+figure()
+plot(hr_to_alpha[0], hr_to_alpha[1], 'o')
+plot(x_hr, m_hr*x_hr + c_hr)
+plot([hr_to_alpha[0][0], hr_to_alpha[0][-1]], [0.75, 0.75], '--', color = 'black')
+plot([hr_to_alpha[0][0], hr_to_alpha[0][-1]], [0.5, 0.5], '-.', color = 'black')
+xlabel('HR (2min-Avg) [bpm]')
+ylabel('HRV Alpha-1')
+title('HRV Ramp: Alpha-1 vs. HR')
 
 
 figure()
