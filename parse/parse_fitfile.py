@@ -104,6 +104,10 @@ def parse_fitfile(filename, entry_dict, verbose = False):
             if entry.name == 'speed':
                 data_value *= 3.6
 
+            # convert longitude/latitude to decimal degrees
+            if entry.name == 'position_lat' or entry.name == 'position_long':
+                data_value /= 11930465.
+
             # Print the name and value of the data (and the units if it has any)
             if verbose:
                 if entry.units:

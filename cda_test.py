@@ -12,22 +12,38 @@ entry_dict = {'speed' : [], 'power' : [], 'distance' : [], 'position_lat' : [], 
 data, mov_avgs = parse_fitfile(sys.argv[1], entry_dict, False)
 
 phys_var = {
-    'mass' : 73+9,
-    'crr'  : 0.004,
-    'cda'  : 0.22,
-    'rho'  : 1.225,
-    'g'    : 9.81,
-    'loss' : 0.025
+    'mass'     : 73+9,
+    'crr'      : 0.004,
+    'cda'      : 0.215,
+    'rho'      : 1.225,
+    'g'        : 9.81,
+    'loss'     : 0.025,
+    'wind_v'   : 1.,
+    'wind_dir' : -70. 
 }
 
-def power_calc(v_new, v_old, slope, phys_var):
+def calc_direction(Alat, Along, Blat, Blong):
+    print(Alat, Along, Blat, Blong)
+    Alat_rad = Alat/180.*pi
+    Along_rad = Along/180.*pi
+    Blat_rad = Blat/180.*pi
+    Blong_rad = Blong/180.*pi
+
+    deltaL = Blong_rad - Along_rad
+    X = cos(Blat_rad) * sin(deltaL)
+    Y = cos(Alat_rad)*sin(Blat_rad) - sin(Alat_rad)*cos(Blat_rad)*cos(deltaL)
+
+    return arctan2(X, Y)/pi*180.
+
+def calc_power(v_new, v_old, dir, slope, phys_var):
     slope_rad = arctan(slope)
     v = 0.5*(v_new + v_old)
+    v_wind = v - phys_var['wind_v'] * cos((dir - phys_var['wind_dir'])/180.*pi)
 
     F_g = phys_var['mass'] * phys_var['g'] * sin(slope_rad)
     F_r = phys_var['mass'] * phys_var['g'] * cos(slope_rad) * phys_var['crr']
-    F_w = 0.5 * phys_var['cda'] * phys_var['rho'] * v*v
-    
+    F_w = 0.5 * phys_var['cda'] * phys_var['rho'] * v_wind*v_wind
+
     pow_base = (F_g + F_r + F_w) * v
     pow_acc = 0.5*phys_var['mass']*(v_new**2 - v_old**2)
 
@@ -46,7 +62,11 @@ avg_pow = 0
 v_old = 0.
 for it in range(len(data['speed'])):
     v_new = data['speed'][it]/3.6
-    pow = power_calc(v_new, v_old, data['slope'][it], phys_var)
+    if it > 0:
+        dir = calc_direction(data['position_lat'][it-1], data['position_long'][it-1], data['position_lat'][it], data['position_long'][it])
+    else:
+        dir = phys_var['wind_dir'] + 90. # assume cross wind for first iteration
+    pow = calc_power(v_new, v_old, dir, data['slope'][it], phys_var)
 #    print(data['slope'][it]*100., arctan(data['slope'][it])*180./pi)
     comp_pow.append(pow)
     avg_pow += pow
