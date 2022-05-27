@@ -13,35 +13,64 @@ def power_msq(data_pow, comp_pow, include_coasting = False):
             np += 1
     return dsq/np
 
-# setup dict of relevant entries
-entry_dict = {'speed' : [], 'power' : [], 'distance' : [], 'position_lat' : [], 'position_long' : [], 'altitude' : []}
+def power_sq_np(data_pow, comp_pow, include_coasting = False):
+    dsq = 0.
+    np = 0
+    for it, dat in enumerate(data_pow):
+        if dat > 0 or include_coasting:
+            dsq += (comp_pow[it] - dat)**2
+            np += 1
+    return dsq, np
 
-# Parse the FIT file
-data, mov_avgs = parse_fitfile(sys.argv[1], entry_dict, False)
+def extract_data_segment(data, start_time, end_time):
+    data_ex = {}
+    for key in data.keys():
+        data_ex[key] = []
+    for it, time in enumerate(data['seconds']):
+        if time >= start_time:
+            if time <= end_time:
+                for key in data.keys():
+                    data_ex[key].append(data[key][it])
+            else:
+                break
+    for key in data.keys():
+        if key != 'timestamp':
+            data_ex[key] = array(data_ex[key])
+
+    return data_ex
+
 
 phys_var_0 = {
     'mass'     : 74+9,
     'crr'      : 0.004,
-    'cda'      : 0.215,
+    'cda'      : 0.22,
     'rho'      : 1.225,
     'g'        : 9.81,
-    'loss'     : 0.025,
-    'wind_v'   : 1.,
-    'wind_dir' : -70. 
+    'loss'     : 0.03,
+    'wind_v'   : 0.,
+    'wind_dir' : 0. 
 }
 
-cda_min = 0.21
-cda_max = 0.25
-cda_delta = 0.001
+# to correct for known errors:
+power_factor = 1.015
+speed_factor = 1.0
+
+# to pick certain segments
+segment_timestamps = [[0, 3600]]
+
+# parameter search ranges
+cda_min = 0.215
+cda_max = 0.245
+cda_delta = 0.0025
 n_cda = int((cda_max - cda_min)/cda_delta) + 1
 
-crr_min = 0.004
+crr_min = 0.000
 crr_max = 0.004
 crr_delta = 0.00025
 n_crr = int((crr_max - crr_min)/crr_delta) + 1
 
 wind_v_min = 0.
-wind_v_max = 5.
+wind_v_max = 2.5
 wind_v_delta = 0.5
 n_wind_v = int((wind_v_max - wind_v_min)/wind_v_delta) + 1
 
@@ -50,48 +79,55 @@ wind_dir_max = 337.5
 wind_dir_delta = 22.5
 n_wind_dir = int((wind_dir_max - wind_dir_min)/wind_dir_delta) + 1
 
-min_msq = -1.
-cda_best = -1
-crr_best = -1
-wind_v_best = -1.
-wind_dir_best = -1.
-comp_pow_best = []
 
+# setup dict of relevant entries and parse the FIT file
+entry_dict = {'speed' : [], 'power' : [], 'distance' : [], 'position_lat' : [], 'position_long' : [], 'altitude' : []}
+data, mov_avgs = parse_fitfile(sys.argv[1], entry_dict, False)
+for it, dat in enumerate(data['speed']):
+    data['speed'][it] = speed_factor*dat
+
+min_msq = -1.
+phys_var_best = phys_var_0
 for cda in linspace(cda_min, cda_max, n_cda, True):
     for crr in linspace(crr_min, crr_max, n_crr, True):
         for wind_v in linspace(wind_v_min, wind_v_max, n_wind_v, True):
             for wind_dir in linspace(wind_dir_min, wind_dir_max, n_wind_dir, True):
+                if wind_v == 0 and wind_dir > 0:
+                    continue # no sense to check different directions for 0 wind
                 print(cda, crr, wind_v, wind_dir)
-                phys_var = phys_var_0
+                phys_var = phys_var_0.copy()
                 phys_var['cda'] = cda
                 phys_var['crr'] = crr
                 phys_var['wind_v'] = wind_v
                 phys_var['wind_dir'] = wind_dir
 
-                comp_pow = calc_power_data(data, phys_var, True, 0)
-                msq = power_msq(data['power'], comp_pow)
+                msq = 0.
+                np = 0
+                for seg in segment_timestamps:
+                    data_seg = extract_data_segment(data, seg[0], seg[1])
+                    comp_pow = calc_power_data(data_seg, phys_var, True, 0)
+                    sq, n = power_sq_np(data_seg['power'], comp_pow) 
+                    msq += sq
+                    np += n
+                msq /= np
 
                 if msq < min_msq or min_msq < 0:
-                    cda_best = cda
-                    crr_best = crr
-                    wind_v_best = wind_v
-                    wind_dir_best = wind_dir
-                    comp_pow_best = comp_pow
+                    phys_var_best = phys_var.copy()
                     min_msq = msq
 
 print('Optimization Results:')
-print('cda:      ', cda_best)
-print('crr:      ', crr_best)
-print('wind_v:   ', wind_v_best)
-print('wind_dir: ', wind_dir_best)
+print('cda:      ', phys_var_best['cda'])
+print('crr:      ', phys_var_best['crr'])
+print('wind_v:   ', phys_var_best['wind_v'])
+print('wind_dir: ', phys_var_best['wind_dir'])
 print()
-print('Min MSQ: ', min_msq)
+print('Min RMSQ: ', sqrt(min_msq))
 
-comp_pow = comp_pow_best
+comp_pow = calc_power_data(data, phys_var_best, False, 0)
 avg_pow = mean(comp_pow)
 
-for it, dat in enumerate(data['power']):
-    print(dat, comp_pow[it])
+#for it, dat in enumerate(data['power']):
+#    print(dat, comp_pow[it])
 
 print('Calculated average power: ', avg_pow)
 print('Measured average power: ', mean(data['power']))
