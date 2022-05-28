@@ -14,14 +14,16 @@ entry_dict = {'speed' : [], 'power' : [], 'distance' : [], 'position_lat' : [], 
 data, mov_avgs = parse_fitfile(sys.argv[1], entry_dict, False)
 
 phys_var = {
-    'mass'     : 73+9,
-    'crr'      : 0.004,
-    'cda'      : 0.215,
-    'rho'      : 1.225,
-    'g'        : 9.81,
-    'loss'     : 0.025,
-    'wind_v'   : 1.,
-    'wind_dir' : -70. 
+    'mass'       : 75+9,
+    'im_wheels'  : 0.5,
+    'circ_wheels': 2.105,
+    'crr'        : 0.004,
+    'cda'        : 0.22,
+    'rho'        : 1.225,
+    'g'          : 9.81,
+    'loss'       : 0.03,
+    'wind_v'     : 0.,
+    'wind_dir'   : -70. 
 }
 comp_pow = calc_power_data(data, phys_var, calc_neg_watts, verbosity)
 avg_pow = mean(comp_pow)
