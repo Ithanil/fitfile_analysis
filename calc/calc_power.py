@@ -28,8 +28,9 @@ def calc_power(v_new, v_old, tdiff, dir, slope, phys_var, verbosity = 0):
     pow_acc = 0.5*phys_var['mass']*(v_new**2 - v_old**2) / tdiff
 
     if verbosity > 1:
-        print(F_g, F_r, F_w)
-        print(v_new, v_old, pow_base, pow_acc)
+        print('Forces g/r/w: ', F_g, F_r, F_w)
+        print('Powers g/r/w/a: ', F_g*v, F_r*v, F_w*v, pow_acc)
+        print('Vel old/new, Power: ', v_new, v_old, pow_base+pow_acc)
 
     return (pow_base + pow_acc) / (1 - phys_var['loss'])
 

@@ -4,7 +4,7 @@ from pylab import *
 from parse.parse_fitfile import parse_fitfile
 from calc.calc_power import calc_power_data
 
-def power_msq(data_pow, comp_pow, include_coasting = False):
+def pdiff_msq(data_pow, comp_pow, include_coasting = False):
     dsq = 0.
     np = 0
     for it, dat in enumerate(data_pow):
@@ -13,13 +13,14 @@ def power_msq(data_pow, comp_pow, include_coasting = False):
             np += 1
     return dsq/np
 
-def power_sq_np(data_pow, comp_pow, include_coasting = False):
+def pdiff_sq_np(data_pow, data_v, comp_pow, include_coasting = False):
     dsq = 0.
     np = 0
     for it, dat in enumerate(data_pow):
-        if dat > 0 or include_coasting:
-            dsq += (comp_pow[it] - dat)**2
-            np += 1
+        if it > 0:
+            if (dat > 0 and data_v[it] > 0 and (abs(data_v[it] - data_v[it-1]) < 0.5)) or include_coasting:
+                dsq += (comp_pow[it] - dat)**2
+                np += 1
     return dsq, np
 
 def extract_data_segment(data, start_time, end_time):
@@ -43,7 +44,7 @@ def extract_data_segment(data, start_time, end_time):
 phys_var_0 = {
     'mass'     : 74+9,
     'crr'      : 0.004,
-    'cda'      : 0.22,
+    'cda'      : 0.225,
     'rho'      : 1.225,
     'g'        : 9.81,
     'loss'     : 0.03,
@@ -52,25 +53,25 @@ phys_var_0 = {
 }
 
 # to correct for known errors:
-power_factor = 1.015
+power_factor = 1.0
 speed_factor = 1.0
 
 # to pick certain segments
 segment_timestamps = [[0, 3600]]
 
 # parameter search ranges
-cda_min = 0.215
-cda_max = 0.245
+cda_min = 0.22
+cda_max = 0.22
 cda_delta = 0.0025
 n_cda = int((cda_max - cda_min)/cda_delta) + 1
 
-crr_min = 0.000
-crr_max = 0.004
+crr_min = 0.002
+crr_max = 0.005
 crr_delta = 0.00025
 n_crr = int((crr_max - crr_min)/crr_delta) + 1
 
 wind_v_min = 0.
-wind_v_max = 2.5
+wind_v_max = 1.5
 wind_v_delta = 0.5
 n_wind_v = int((wind_v_max - wind_v_min)/wind_v_delta) + 1
 
@@ -106,7 +107,7 @@ for cda in linspace(cda_min, cda_max, n_cda, True):
                 for seg in segment_timestamps:
                     data_seg = extract_data_segment(data, seg[0], seg[1])
                     comp_pow = calc_power_data(data_seg, phys_var, True, 0)
-                    sq, n = power_sq_np(data_seg['power'], comp_pow) 
+                    sq, n = pdiff_abs_np(data_seg['power'], data_seg['speed'], comp_pow) 
                     msq += sq
                     np += n
                 msq /= np
