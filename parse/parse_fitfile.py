@@ -165,3 +165,23 @@ def parse_fitfile(filename, entry_dict, verbose = False):
             mov_avgs[ma_entry][it_ma] = (array(mov_avgs[ma_entry][it_ma][0]), array(mov_avgs[ma_entry][it_ma][1]))
 
     return data, mov_avgs
+
+
+
+def extract_data_segment(data, start_sec, end_sec):
+# function to extract data segments between given times in seconds
+    data_ex = {}
+    for key in data.keys():
+        data_ex[key] = []
+    for it, time in enumerate(data['seconds']):
+        if time >= start_sec:
+            if time <= end_sec:
+                for key in data.keys():
+                    data_ex[key].append(data[key][it])
+            else:
+                break
+    for key in data.keys():
+        if key != 'timestamp':
+            data_ex[key] = array(data_ex[key])
+
+    return data_ex

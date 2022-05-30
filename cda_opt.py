@@ -1,8 +1,10 @@
 import sys
 from pylab import *
 
-from parse.parse_fitfile import parse_fitfile
+from parse.parse_fitfile import parse_fitfile, extract_data_segment
 from calc.calc_power import calc_power_data
+from parse.get_weather_data import get_weather_data
+from calc.calc_rho import calc_rho_humid
 
 def pdiff_msq(data_pow, comp_pow, no_filter = False):
     dsq = 0.
@@ -23,23 +25,6 @@ def pdiff_sq_np(data_pow, data_v, comp_pow, no_filter = False):
                 np += 1
     return dsq, np
 
-def extract_data_segment(data, start_time, end_time):
-    data_ex = {}
-    for key in data.keys():
-        data_ex[key] = []
-    for it, time in enumerate(data['seconds']):
-        if time >= start_time:
-            if time <= end_time:
-                for key in data.keys():
-                    data_ex[key].append(data[key][it])
-            else:
-                break
-    for key in data.keys():
-        if key != 'timestamp':
-            data_ex[key] = array(data_ex[key])
-
-    return data_ex
-
 
 phys_var_0 = {
     'mass'        : 73.5+9,
@@ -54,27 +39,27 @@ phys_var_0 = {
 }
 
 # to correct for known errors:
-power_factor = 1.0
+power_factor = 1.015
 speed_factor = 1.0
 
 # to pick certain segments
-#segment_timestamps = [[21, 234], [355, 702], [731, 977], [1058, 1401]]
-segment_timestamps = [[]]
+segment_timestamps = [[21, 234], [355, 702], [731, 977], [1058, 1401]]
+#segment_timestamps = [[]]
 
 # parameter search ranges
-cda_min = 0.216
+cda_min = 0.21
 cda_max = 0.23
 cda_delta = 0.001
 n_cda = int((cda_max - cda_min)/cda_delta) + 1
 
-crr_min = 0.003
+crr_min = 0.0035
 crr_max = 0.005
-crr_delta = 0.0005
+crr_delta = 0.00025
 n_crr = int((crr_max - crr_min)/crr_delta) + 1
 
 wind_v_min = 0.0
 wind_v_max = 3.0
-wind_v_delta = 0.33333333
+wind_v_delta = 0.277777778
 n_wind_v = int((wind_v_max - wind_v_min)/wind_v_delta) + 1
 
 wind_dir_min = 0.
@@ -90,6 +75,15 @@ for it, pow in enumerate(data['power']):
     data['power'][it] = power_factor*pow
 for it, spd in enumerate(data['speed']):
     data['speed'][it] = speed_factor*spd
+
+
+# get weather data and compute rho
+weather_data = get_weather_data(data)
+rho_calc = calc_rho_humid(weather_data.temp[0], weather_data.pres[0], weather_data.rhum[0])
+print('Weather Data:')
+print(weather_data)
+print('Computed Air Rho: ', rho_calc)
+phys_var_0['rho'] = rho_calc
 
 min_msq = -1.
 phys_var_best = phys_var_0
@@ -136,9 +130,6 @@ print('Min RMSQ: ', sqrt(min_msq))
 
 comp_pow = calc_power_data(data, phys_var_best, True, 0)
 avg_pow = mean(comp_pow)
-
-#for it, dat in enumerate(data['power']):
-#    print(dat, comp_pow[it])
 
 print('Calculated average power: ', avg_pow)
 print('Measured average power: ', mean(data['power']))
