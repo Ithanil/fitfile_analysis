@@ -8,7 +8,7 @@ def pdiff_msq(data_pow, comp_pow, no_filter = False):
     dsq = 0.
     np = 0
     for it, dat in enumerate(data_pow):
-        if (dat > 0 and data_v[it] > 2 and abs(data_v[it] - data_v[it-1]) < 0.5) or no_filter:
+        if (dat > 0 and data_v[it] > 2. and abs(data_v[it] - data_v[it-1]) < 0.5) or no_filter:
             dsq += (comp_pow[it] - dat)**2
             np += 1
     return dsq/np
@@ -18,7 +18,7 @@ def pdiff_sq_np(data_pow, data_v, comp_pow, no_filter = False):
     np = 0
     for it, dat in enumerate(data_pow):
         if it > 0:
-            if (dat > 0 and data_v[it] > 2 and abs(data_v[it] - data_v[it-1]) < 0.5) or no_filter:
+            if (dat > 0 and data_v[it] > 2. and abs(data_v[it] - data_v[it-1]) < 0.5) or no_filter:
                 dsq += (comp_pow[it] - dat)**2
                 np += 1
     return dsq, np
@@ -42,11 +42,10 @@ def extract_data_segment(data, start_time, end_time):
 
 
 phys_var_0 = {
-    'mass'        : 75+9,
-    'im_wheels'   : 0.5,
-    'circ_wheels' : 2.105,
+    'mass'        : 73.5+9,
+    'rot_mass'    : 0.5 * 4.*pi**2 / 2.105**2,
     'crr'         : 0.004,
-    'cda'         : 0.225,
+    'cda'         : 0.22,
     'rho'         : 1.225,
     'g'           : 9.81,
     'loss'        : 0.03,
@@ -59,22 +58,23 @@ power_factor = 1.0
 speed_factor = 1.0
 
 # to pick certain segments
-segment_timestamps = [[0, 3600]]
+#segment_timestamps = [[21, 234], [355, 702], [731, 977], [1058, 1401]]
+segment_timestamps = [[]]
 
 # parameter search ranges
-cda_min = 0.21
-cda_max = 0.24
-cda_delta = 0.0005
+cda_min = 0.216
+cda_max = 0.23
+cda_delta = 0.001
 n_cda = int((cda_max - cda_min)/cda_delta) + 1
 
-crr_min = 0.004
-crr_max = 0.004
+crr_min = 0.003
+crr_max = 0.005
 crr_delta = 0.0005
 n_crr = int((crr_max - crr_min)/crr_delta) + 1
 
 wind_v_min = 0.0
 wind_v_max = 3.0
-wind_v_delta = 0.5
+wind_v_delta = 0.33333333
 n_wind_v = int((wind_v_max - wind_v_min)/wind_v_delta) + 1
 
 wind_dir_min = 0.
@@ -86,8 +86,10 @@ n_wind_dir = int((wind_dir_max - wind_dir_min)/wind_dir_delta) + 1
 # setup dict of relevant entries and parse the FIT file
 entry_dict = {'speed' : [], 'power' : [], 'distance' : [], 'position_lat' : [], 'position_long' : [], 'altitude' : []}
 data, mov_avgs = parse_fitfile(sys.argv[1], entry_dict, False)
-for it, dat in enumerate(data['speed']):
-    data['speed'][it] = speed_factor*dat
+for it, pow in enumerate(data['power']):
+    data['power'][it] = power_factor*pow
+for it, spd in enumerate(data['speed']):
+    data['speed'][it] = speed_factor*spd
 
 min_msq = -1.
 phys_var_best = phys_var_0
@@ -107,7 +109,13 @@ for cda in linspace(cda_min, cda_max, n_cda, True):
                 msq = 0.
                 np = 0
                 for seg in segment_timestamps:
-                    data_seg = extract_data_segment(data, seg[0], seg[1])
+                    if seg != []:
+                        data_seg = extract_data_segment(data, seg[0], seg[1])
+                    else:
+                        if len(segment_timestamps) > 1:
+                            print('Error: More than one segment in list, but one was empty!')
+                        data_seg = data
+
                     comp_pow = calc_power_data(data_seg, phys_var, True, 0)
                     sq, n = pdiff_sq_np(data_seg['power'], data_seg['speed'], comp_pow) 
                     msq += sq
@@ -138,20 +146,18 @@ print('Measured average power: ', mean(data['power']))
 win_len = 60
 data_smooth = []
 comp_smooth = []
-cont = 0
-dat_movavg = 0.
-comp_movavg = 0.
-for it, dat in enumerate(data['power']):
-    dat_movavg += dat
-    comp_movavg += comp_pow[it]
-    cont += 1
+it = 0
+while it < len(comp_pow) - win_len + 1:
+    win_dat = data['power'][it : it + win_len]
+    win_comp = comp_pow[it : it + win_len]
 
-    if cont == win_len:
-        data_smooth.append(dat_movavg / win_len)
-        comp_smooth.append(comp_movavg / win_len)
-        cont = 0
-        dat_movavg = 0.
-        comp_movavg = 0.
+    avg_dat = mean(win_dat)
+    avg_comp = mean(win_comp)
+
+    data_smooth.append(avg_dat)
+    comp_smooth.append(avg_comp)
+
+    it += 1
 
 figure()
 plot(data['power'], 'x')

@@ -26,15 +26,13 @@ def calc_power(v_new, v_old, tdiff, dir, slope, phys_var, verbosity = 0):
     pow_base = (F_g + F_r + F_w) * v
 
     diff_ekin = 0.5*phys_var['mass']*(v_new**2 - v_old**2)
-    om_new = 2.*pi*v_new/phys_var['circ_wheels']
-    om_old = 2.*pi*v_old/phys_var['circ_wheels']
-    diff_erot = 0.5*phys_var['im_wheels']*(om_new**2 - om_old**2)
+    diff_erot = 0.5*phys_var['rot_mass']*(v_new**2 - v_old**2)
     pow_acc = (diff_ekin + diff_erot) / tdiff
 
     if verbosity > 1:
         print('Forces g/r/w: ', F_g, F_r, F_w)
         print('Powers g/r/w/a: ', F_g*v, F_r*v, F_w*v, pow_acc)
-        print('Ekin_new: ', 0.5*phys_var['mass']*v_new**2, ' Erot_new: ', 0.5*phys_var['im_wheels']*om_new**2)
+        print('Ekin_new: ', 0.5*phys_var['mass']*v_new**2, ' Erot_new: ', 0.5*phys_var['rot_mass']*v_new**2)
         print('Diff Ekin, Diff Erot, Power: ', diff_ekin, diff_erot, pow_base+pow_acc)
 
     return (pow_base + pow_acc) / (1 - phys_var['loss'])
