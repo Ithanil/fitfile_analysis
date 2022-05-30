@@ -131,6 +131,9 @@ dmypy.json
 # PyCharm config folder
 .idea/
 
+# c object files
+*.o
+
 # ignore all fit files
 *.fit
 
