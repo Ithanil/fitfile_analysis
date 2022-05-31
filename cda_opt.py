@@ -1,8 +1,9 @@
 import sys
 from pylab import *
+from ctypes import cdll
 
 from parse.parse_fitfile import parse_fitfile, extract_data_segment
-from calc.calc_power import calc_power_data
+from calc.calc_power_C import calc_power_data_C
 from parse.get_weather_data import get_weather_data
 from calc.calc_rho import calc_rho_humid
 
@@ -25,6 +26,8 @@ def pdiff_sq_np(data_pow, data_v, comp_pow, no_filter = False):
                 np += 1
     return dsq, np
 
+# load C library
+lib = cdll.LoadLibrary("calc/calc_power_C.o")
 
 phys_var_0 = {
     'mass'        : 73.5+9,
@@ -39,12 +42,12 @@ phys_var_0 = {
 }
 
 # to correct for known errors:
-power_factor = 1.015
+power_factor = 1.0
 speed_factor = 1.0
 
 # to pick certain segments
-segment_timestamps = [[21, 234], [355, 702], [731, 977], [1058, 1401]]
-#segment_timestamps = [[]]
+#segment_timestamps = [[21, 234], [355, 702], [731, 977], [1058, 1401]]
+segment_timestamps = [[]]
 
 # parameter search ranges
 cda_min = 0.21
@@ -52,19 +55,19 @@ cda_max = 0.23
 cda_delta = 0.001
 n_cda = int((cda_max - cda_min)/cda_delta) + 1
 
-crr_min = 0.0035
+crr_min = 0.003
 crr_max = 0.005
 crr_delta = 0.00025
 n_crr = int((crr_max - crr_min)/crr_delta) + 1
 
 wind_v_min = 0.0
-wind_v_max = 3.0
-wind_v_delta = 0.277777778
+wind_v_max = 5.0
+wind_v_delta = 0.277777777
 n_wind_v = int((wind_v_max - wind_v_min)/wind_v_delta) + 1
 
 wind_dir_min = 0.
-wind_dir_max = 337.5
-wind_dir_delta = 22.5
+wind_dir_max = 348.75
+wind_dir_delta = 11.25
 n_wind_dir = int((wind_dir_max - wind_dir_min)/wind_dir_delta) + 1
 
 
@@ -110,7 +113,7 @@ for cda in linspace(cda_min, cda_max, n_cda, True):
                             print('Error: More than one segment in list, but one was empty!')
                         data_seg = data
 
-                    comp_pow = calc_power_data(data_seg, phys_var, True, 0)
+                    comp_pow = calc_power_data_C(lib, data_seg, phys_var, True)
                     sq, n = pdiff_sq_np(data_seg['power'], data_seg['speed'], comp_pow) 
                     msq += sq
                     np += n
@@ -128,7 +131,7 @@ print('wind_dir: ', phys_var_best['wind_dir'])
 print()
 print('Min RMSQ: ', sqrt(min_msq))
 
-comp_pow = calc_power_data(data, phys_var_best, True, 0)
+comp_pow = calc_power_data_C(lib, data, phys_var_best, True)
 avg_pow = mean(comp_pow)
 
 print('Calculated average power: ', avg_pow)

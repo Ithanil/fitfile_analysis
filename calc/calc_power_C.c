@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdio.h>
 
 struct PhysVar {
     const double mass;
@@ -43,24 +44,26 @@ double calc_power(const double v_new, const double v_old, const double tdiff, co
 }
 
 void calc_power_data(const int ndata, double * const comp_pow,
-                    const double * const speed, const double * const power, const double * const dist,
-                    const double * const posLat, const double * const posLong, const double * const alt, const double * const slope,
-                    const int * const tsecs, const struct PhysVar * const phys_var, const int calc_neg_watts) {
+                    const double * const speed, const double * const posLat, const double * const posLong,
+                    const double * const slope, const double * const tsecs,
+                    const struct PhysVar phys_var, const int calc_neg_watts) {
     double v_old = 0.;
     for (int it = 0; it < ndata; it+=1) {
         const double v_new = speed[it]/3.6;
         double dir;
         double tdiff;
+        //printf("Speed: %f, PosLat: %f, PosLong: %f, Slope: %f, Secs: %f", speed[it], posLat[it], posLong[it], slope[it], tsecs[it]);
+        //printf("\n");
         if (it > 0) {
             dir = calc_direction(posLat[it-1], posLong[it-1], posLat[it], posLong[it]);
             tdiff = tsecs[it] - tsecs[it-1];
         }
         else {
-            dir = phys_var->wind_dir + 90.; // just assume perfect cross wind for first iteration
+            dir = phys_var.wind_dir + 90.; // just assume perfect cross wind for first iteration
             tdiff = 1.;
         }
-        const double pow = calc_power(v_new, v_old, tdiff, dir, slope[it], phys_var);
-        if (pow > 0 || calc_neg_watts) { // option to clamp power to positive values
+        const double pow = calc_power(v_new, v_old, tdiff, dir, slope[it], &phys_var);
+        if (pow > 0 || calc_neg_watts > 0) { // option to clamp power to positive values
             comp_pow[it] = pow;
         }
         else {

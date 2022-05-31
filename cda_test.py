@@ -7,7 +7,7 @@ from parse.get_weather_data import get_weather_data
 from calc.calc_rho import calc_rho_humid
 
 verbosity = 0
-calc_neg_watts = False # if true, don't treat computed negative watt values as 0
+calc_neg_watts = True # if true, don't treat computed negative watt values as 0
 
 # setup dict of relevant entries
 entry_dict = {'speed' : [], 'power' : [], 'distance' : [], 'position_lat' : [], 'position_long' : [], 'altitude' : []}
@@ -23,10 +23,10 @@ print(weather_data)
 print('Computed Air Rho: ', rho_calc)
 
 phys_var = {
-    'mass'       : 74+9,
+    'mass'       : 73.5+9,
     'rot_mass'   : 0.5 * 4.*pi**2 / 2.105**2,
-    'crr'        : 0.00375,
-    'cda'        : 0.222,
+    'crr'        : 0.004,
+    'cda'        : 0.22,
     'rho'        : rho_calc,
     'g'          : 9.81,
     'loss'       : 0.03,
