@@ -159,10 +159,10 @@ def parse_fitfile(filename, entry_dict, verbose = False):
     # convert to numpy arrays
     for data_entry in data_entry_list:
         if data_entry != 'timestamp':
-            data[data_entry] = array(data[data_entry])
+            data[data_entry] = array(data[data_entry], dtype=double)
     for ma_entry in ma_entry_list:
         for it_ma, ma_len in enumerate(entry_dict[ma_entry]):
-            mov_avgs[ma_entry][it_ma] = (array(mov_avgs[ma_entry][it_ma][0]), array(mov_avgs[ma_entry][it_ma][1]))
+            mov_avgs[ma_entry][it_ma] = (array(mov_avgs[ma_entry][it_ma][0], dtype=double), array(mov_avgs[ma_entry][it_ma][1], dtype=double))
 
     return data, mov_avgs
 
@@ -182,6 +182,6 @@ def extract_data_segment(data, start_sec, end_sec):
                 break
     for key in data.keys():
         if key != 'timestamp':
-            data_ex[key] = array(data_ex[key])
+            data_ex[key] = array(data_ex[key], dtype = double)
 
     return data_ex

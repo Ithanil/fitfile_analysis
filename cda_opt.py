@@ -4,30 +4,13 @@ from ctypes import cdll
 
 from parse.parse_fitfile import parse_fitfile, extract_data_segment
 from calc.calc_power_C import calc_power_data_C
+from calc.calc_pdiff_C import calc_pdiff_C
 from parse.get_weather_data import get_weather_data
 from calc.calc_rho import calc_rho_humid
 
-def pdiff_msq(data_pow, comp_pow, no_filter = False):
-    dsq = 0.
-    np = 0
-    for it, dat in enumerate(data_pow):
-        if (dat > 0 and data_v[it] > 2. and abs(data_v[it] - data_v[it-1]) < 0.5) or no_filter:
-            dsq += (comp_pow[it] - dat)**2
-            np += 1
-    return dsq/np
-
-def pdiff_sq_np(data_pow, data_v, comp_pow, no_filter = False):
-    dsq = 0.
-    np = 0
-    for it, dat in enumerate(data_pow):
-        if it > 0:
-            if (dat > 0 and data_v[it] > 2. and abs(data_v[it] - data_v[it-1]) < 0.5) or no_filter:
-                dsq += (comp_pow[it] - dat)**2
-                np += 1
-    return dsq, np
-
-# load C library
-lib = cdll.LoadLibrary("calc/calc_power_C.o")
+# load C libraries
+lib_power = cdll.LoadLibrary("calc/calc_power.o")
+lib_pdiff = cdll.LoadLibrary("calc/calc_pdiff.o")
 
 phys_var_0 = {
     'mass'        : 73.5+9,
@@ -88,6 +71,16 @@ print(weather_data)
 print('Computed Air Rho: ', rho_calc)
 phys_var_0['rho'] = rho_calc
 
+# prepare data segments
+data_segments = []
+for seg in segment_timestamps:
+    if seg != []:
+        data_segments.append(extract_data_segment(data, seg[0], seg[1]))
+    else:
+        if len(segment_timestamps) > 1:
+            print('Error: More than one segment in list, but one was empty!')
+        data_segments.append(data)
+
 min_msq = -1.
 phys_var_best = phys_var_0
 for cda in linspace(cda_min, cda_max, n_cda, True):
@@ -105,16 +98,9 @@ for cda in linspace(cda_min, cda_max, n_cda, True):
 
                 msq = 0.
                 np = 0
-                for seg in segment_timestamps:
-                    if seg != []:
-                        data_seg = extract_data_segment(data, seg[0], seg[1])
-                    else:
-                        if len(segment_timestamps) > 1:
-                            print('Error: More than one segment in list, but one was empty!')
-                        data_seg = data
-
-                    comp_pow = calc_power_data_C(lib, data_seg, phys_var, True)
-                    sq, n = pdiff_sq_np(data_seg['power'], data_seg['speed'], comp_pow) 
+                for data_seg in data_segments:
+                    comp_pow = calc_power_data_C(lib_power, data_seg, phys_var, True)
+                    sq, n = calc_pdiff_C(lib_pdiff, data_seg['power'], data_seg['speed'], comp_pow)
                     msq += sq
                     np += n
                 msq /= np
@@ -131,7 +117,7 @@ print('wind_dir: ', phys_var_best['wind_dir'])
 print()
 print('Min RMSQ: ', sqrt(min_msq))
 
-comp_pow = calc_power_data_C(lib, data, phys_var_best, True)
+comp_pow = calc_power_data_C(lib_power, data, phys_var_best, True)
 avg_pow = mean(comp_pow)
 
 print('Calculated average power: ', avg_pow)
