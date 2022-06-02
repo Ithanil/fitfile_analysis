@@ -23,7 +23,7 @@ double calc_direction(const double Alat, const double Along, const double Blat, 
     const double X = cos(Blat_rad)*sin(deltaL);
     const double Y = cos(Alat_rad)*sin(Blat_rad) - sin(Alat_rad)*cos(Blat_rad)*cos(deltaL);
 
-    return atan2(X, Y)/M_PI*180.;
+    return atan2(X, Y)/M_PI*180. + 180.;
 }
 
 double calc_power(const double v_new, const double v_old, const double tdiff, const double dir, const double slope, const struct PhysVar * const phys_var) {
@@ -54,14 +54,27 @@ void calc_power_data(const int ndata, double * const comp_pow,
         double tdiff;
         //printf("Speed: %f, PosLat: %f, PosLong: %f, Slope: %f, Secs: %f", speed[it], posLat[it], posLong[it], slope[it], tsecs[it]);
         //printf("\n");
+
+        // compute time difference
         if (it > 0) {
-            dir = calc_direction(posLat[it-1], posLong[it-1], posLat[it], posLong[it]);
             tdiff = tsecs[it] - tsecs[it-1];
         }
         else {
-            dir = phys_var.wind_dir + 90.; // just assume perfect cross wind for first iteration
             tdiff = 1.;
         }
+
+        // compute smoothed direction
+        if (ndata > 1 && it == ndata - 1) { // last step
+            dir = calc_direction(posLat[it-1], posLong[it-1], posLat[it], posLong[it]);
+        }
+        else if (ndata > 1 && it > 0) { // regular step
+            dir = calc_direction(posLat[it-1], posLong[it-1], posLat[it+1], posLong[it+1]);
+        }
+        else { // first step: just assume perfect cross wind
+            dir = phys_var.wind_dir + 90.;
+        }
+
+        // compute power
         const double pow = calc_power(v_new, v_old, tdiff, dir, slope[it], &phys_var);
         if (pow > 0 || calc_neg_watts > 0) { // option to clamp power to positive values
             comp_pow[it] = pow;

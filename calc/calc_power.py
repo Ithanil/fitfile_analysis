@@ -13,7 +13,7 @@ def calc_direction(Alat, Along, Blat, Blong):
     X = cos(Blat_rad)*sin(deltaL)
     Y = cos(Alat_rad)*sin(Blat_rad) - sin(Alat_rad)*cos(Blat_rad)*cos(deltaL)
 
-    return arctan2(X, Y)/pi*180.
+    return arctan2(X, Y)/pi*180. + 180.
 
 def calc_power(v_new, v_old, tdiff, dir, slope, phys_var, verbosity = 0):
     slope_rad = arctan(slope)
@@ -54,18 +54,26 @@ def calc_power_data(data, phys_var, calc_neg_watts = True, verbosity = 0):
 #}
     comp_pow = []
     v_old = 0.
-    for it in range(len(data['speed'])):
+    ndata = len(data['speed'])
+    for it in range(ndata):
         v_new = data['speed'][it]/3.6
+
+        # compute time difference
         if it > 0:
-            dir = calc_direction(data['position_lat'][it-1], data['position_long'][it-1], data['position_lat'][it], data['position_long'][it])
             tdiff = data['seconds'][it] - data['seconds'][it-1]
-            if tdiff < 1:
-                print('Error: Time advancement between points was negative!')
         else:
-            dir = phys_var['wind_dir'] + 90. # just assume perfect cross wind for first iteration
-            tdiff = 1
+            tdiff = 1.
+
+        # compute smoothed direction
+        if it == ndata - 1: # last step
+            dir = calc_direction(data['position_lat'][it-1], data['position_long'][it-1], data['position_lat'][it], data['position_long'][it])
+        elif it > 0: # regular step
+            dir = calc_direction(data['position_lat'][it-1], data['position_long'][it-1], data['position_lat'][it+1], data['position_long'][it+1])
+        else: # first step: assume perfect cross wind
+            dir = phys_var['wind_dir'] + 90.
+
+        # compute power
         pow = calc_power(v_new, v_old, tdiff, dir, data['slope'][it], phys_var, verbosity)
-#       print(data['slope'][it]*100., arctan(data['slope'][it])*180./pi)
         if pow > 0 or calc_neg_watts: # option to clamp power to positive values
             comp_pow.append(pow)
         else:
