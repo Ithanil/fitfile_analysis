@@ -47,7 +47,7 @@ void calc_power_data(const int ndata, double * const comp_pow,
                     const double * const speed, const double * const posLat, const double * const posLong,
                     const double * const slope, const double * const tsecs,
                     const struct PhysVar phys_var, const int calc_neg_watts) {
-    double v_old = 0.;
+    double v_old = speed[0]/3.6;
     for (int it = 0; it < ndata; it+=1) {
         const double v_new = speed[it]/3.6;
         double dir;

@@ -53,7 +53,7 @@ def calc_power_data(data, phys_var, calc_neg_watts = True, verbosity = 0):
 #    'wind_dir' : -70.
 #}
     comp_pow = []
-    v_old = 0.
+    v_old = data['speed'][0]/3.6
     ndata = len(data['speed'])
     for it in range(ndata):
         v_new = data['speed'][it]/3.6
