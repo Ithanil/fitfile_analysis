@@ -12,7 +12,7 @@ class PhysVar(Structure):
                 ("wind_v", c_double),
                 ("wind_dir", c_double)]
 
-def calc_power_data_C(lib, data, phys_var, calc_neg_watts = True):
+def calc_power_data_C(lib, data, phys_var, use_zero_slope = False, calc_neg_watts = True):
     # prepare c function
     calc_power_data_cfun = lib.calc_power_data
     calc_power_data_cfun.restype = c_void_p
@@ -32,6 +32,7 @@ def calc_power_data_C(lib, data, phys_var, calc_neg_watts = True):
                     c_void_p(data['slope'].ctypes.data),
                     c_void_p(data['seconds'].ctypes.data),
                     phys_var_struct,
+                    c_int(use_zero_slope),
                     c_int(calc_neg_watts))
 
     return comp_pow

@@ -21,7 +21,7 @@ def calc_power(v_new, v_old, tdiff, dir, slope, phys_var, verbosity = 0):
     v_wind = v - phys_var['wind_v'] * cos((dir - phys_var['wind_dir'])/180.*pi)
 
     F_g = phys_var['mass'] * phys_var['g'] * sin(slope_rad)
-    F_r = phys_var['mass'] * phys_var['g'] * abs(cos(slope_rad)) * phys_var['crr']
+    F_r = phys_var['mass'] * phys_var['g'] * cos(slope_rad) * phys_var['crr']
     F_w = 0.5 * phys_var['cda'] * phys_var['rho'] * v_wind*v_wind
     pow_base = (F_g + F_r + F_w) * v
 
@@ -37,7 +37,7 @@ def calc_power(v_new, v_old, tdiff, dir, slope, phys_var, verbosity = 0):
 
     return (pow_base + pow_acc) / (1 - phys_var['loss'])
 
-def calc_power_data(data, phys_var, calc_neg_watts = True, verbosity = 0):
+def calc_power_data(data, phys_var, use_zero_slope = False, calc_neg_watts = True, verbosity = 0):
 #data needs to contain the following entries:
 #'speed', 'power', 'distance', 'position_lat', 'position_long', 'altitude'
 #
@@ -72,8 +72,18 @@ def calc_power_data(data, phys_var, calc_neg_watts = True, verbosity = 0):
         else: # first step: assume perfect cross wind
             dir = phys_var['wind_dir'] + 90.
 
+        # compute smoothed slope
+        smooth_slope = 0.
+        if not use_zero_slope:
+            if it == ndata - 1: # last step
+                smooth_slope = 0.5*(data['slope'][it-1] + data['slope'][it])
+            elif it > 0: # regular step
+                smooth_slope = 0.333333333*(data['slope'][it-1] + data['slope'][it] + data['slope'][it+1])
+            else: # first step
+                smooth_slope = 0.5*(data['slope'][it] + data['slope'][it+1])
+
         # compute power
-        pow = calc_power(v_new, v_old, tdiff, dir, data['slope'][it], phys_var, verbosity)
+        pow = calc_power(v_new, v_old, tdiff, dir, smooth_slope, phys_var, verbosity)
         if pow > 0 or calc_neg_watts: # option to clamp power to positive values
             comp_pow.append(pow)
         else:

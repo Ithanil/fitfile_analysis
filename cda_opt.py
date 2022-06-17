@@ -5,6 +5,7 @@ from datetime import datetime
 
 from parse.parse_fitfile import parse_fitfile, extract_data_segment_secs, extract_data_segment_time
 from calc.calc_power_C import calc_power_data_C
+#from calc.calc_power import calc_power_data
 from calc.calc_pdiff_C import calc_pdiff_C
 from parse.get_weather_data import get_weather_data
 from calc.calc_rho import calc_rho_humid
@@ -14,9 +15,9 @@ lib_power = cdll.LoadLibrary("calc/calc_power.o")
 lib_pdiff = cdll.LoadLibrary("calc/calc_pdiff.o")
 
 phys_var_0 = {
-    'mass'        : 74+9,
-    'rot_mass'    : 0.5 * 4.*pi**2 / 2.105**2,
-    'crr'         : 0.004,
+    'mass'        : 73+9,
+    'rot_mass'    : 0.15 * 4.*pi**2 / 2.105**2,
+    'crr'         : 0.0035,
     'cda'         : 0.22,
     'rho'         : 1.225,
     'g'           : 9.81,
@@ -28,24 +29,39 @@ phys_var_0 = {
 # to correct for known errors:
 power_factor = 1.0
 speed_factor = 1.0
+use_zero_slope = False
 
 # to pick certain segments
+
+# Auringen 20201
 #segment_timestamps = [[21, 234], [355, 702], [731, 977], [1058, 1401]]
+
+# Aero Test 05/22
 #segment_timestamps = [[datetime(2022, 5, 26, 15, 52, 44), datetime(2022, 5, 26, 15, 56, 2)], [datetime(2022, 5, 26, 15, 58, 51), datetime(2022, 5, 26, 16, 1, 52)],
 #                      [datetime(2022, 5, 26, 16, 2, 42), datetime(2022, 5, 26, 16, 5, 49)], [datetime(2022, 5, 26, 16, 8, 51), datetime(2022, 5, 26, 16, 11, 39)]]
 #segment_timestamps = [[datetime(2022, 5, 26, 16, 12, 34), datetime(2022, 5, 26, 16, 15, 38)], [datetime(2022, 5, 26, 16, 16, 8), datetime(2022, 5, 26, 16, 18, 53)],
 #                      [datetime(2022, 5, 26, 16, 19, 50), datetime(2022, 5, 26, 16, 23, 11)], [datetime(2022, 5, 26, 16, 23, 46), datetime(2022, 5, 26, 16, 26, 33)]]
 
-segment_timestamps = [[]]
+# Aero Test 06/22
+#segment_timestamps = [[datetime(2022, 6, 15, 17, 32, 54), datetime(2022, 6, 15, 17, 34, 48)], [datetime(2022, 6, 15, 17, 36, 7), datetime(2022, 6, 15, 17, 37, 53)],
+#                      [datetime(2022, 6, 15, 17, 50, 3), datetime(2022, 6, 15, 17, 51, 55)], [datetime(2022, 6, 15, 17, 53, 15), datetime(2022, 6, 15, 17, 55, 1)],
+#                      [datetime(2022, 6, 15, 18, 7, 19), datetime(2022, 6, 15, 18, 9, 27)], [datetime(2022, 6, 15, 18, 9, 55), datetime(2022, 6, 15, 18, 11, 51)]]
+
+segment_timestamps = [[datetime(2022, 6, 15, 17, 32, 54), datetime(2022, 6, 15, 17, 34, 48)], [datetime(2022, 6, 15, 17, 36, 7), datetime(2022, 6, 15, 17, 37, 53)],
+                      [datetime(2022, 6, 15, 17, 50, 3), datetime(2022, 6, 15, 17, 51, 55)], [datetime(2022, 6, 15, 17, 53, 15), datetime(2022, 6, 15, 17, 55, 1)]]
+#segment_timestamps = [[datetime(2022, 6, 15, 17, 39, 18), datetime(2022, 6, 15, 17, 41, 4)], [datetime(2022, 6, 15, 17, 42, 25), datetime(2022, 6, 15, 17, 44, 12)],
+#                      [datetime(2022, 6, 15, 17, 56, 33), datetime(2022, 6, 15, 17, 58, 19)], [datetime(2022, 6, 15, 17, 59, 45), datetime(2022, 6, 15, 18, 1, 29)]]
+
+#segment_timestamps = [[]]
 
 # parameter search ranges
 cda_min = 0.21
-cda_max = 0.23
+cda_max = 0.24
 cda_delta = 0.001
 n_cda = int((cda_max - cda_min)/cda_delta) + 1
 
-crr_min = 0.00375
-crr_max = 0.00375
+crr_min = 0.003
+crr_max = 0.003
 crr_delta = 0.00025
 n_crr = int((crr_max - crr_min)/crr_delta) + 1
 
@@ -101,7 +117,7 @@ for cda in linspace(cda_min, cda_max, n_cda, True):
                 msq = 0.
                 np = 0
                 for data_seg in data_segments:
-                    comp_pow = calc_power_data_C(lib_power, data_seg, phys_var, True)
+                    comp_pow = calc_power_data_C(lib_power, data_seg, phys_var, use_zero_slope, True)
                     sq, n = calc_pdiff_C(lib_pdiff, data_seg['power'], data_seg['speed'], comp_pow)
                     msq += sq
                     np += n
@@ -117,14 +133,38 @@ for cda in linspace(cda_min, cda_max, n_cda, True):
 # Compute various power averages
 avg_comp_pow_segs = 0.
 avg_data_pow_segs = 0.
+tstamps = []
+cpow_pdata = []
+dpow_pdata = []
+avg_cpow_pdata = []
+avg_dpow_pdata = []
 for data_seg in data_segments:
-    comp_pow_seg = calc_power_data_C(lib_power, data_seg, phys_var_best, True)
-    avg_comp_pow_segs += mean(comp_pow_seg)
-    avg_data_pow_segs += mean(data_seg['power'])
+    comp_pow_seg = calc_power_data_C(lib_power, data_seg, phys_var_best, use_zero_slope, True)
+#    comp_pow_seg = calc_power_data(data_seg, phys_var_best, use_zero_slope, True, 2)
+    mean_comp_pow = mean(comp_pow_seg)
+    mean_data_pow = mean(data_seg['power'])
+    avg_comp_pow_segs += mean_comp_pow
+    avg_data_pow_segs += mean_data_pow
+    for it, t in enumerate(data_seg['timestamp']):
+        tstamps.append(t)
+        cpow_pdata.append(comp_pow_seg[it])
+        dpow_pdata.append(data_seg['power'][it])
+        avg_cpow_pdata.append(mean_comp_pow)
+        avg_dpow_pdata.append(mean_data_pow)
 avg_comp_pow_segs /= len(data_segments)
 avg_data_pow_segs /= len(data_segments)
-comp_pow_full = calc_power_data_C(lib_power, data, phys_var_best, True)
+comp_pow_full = calc_power_data_C(lib_power, data, phys_var_best, use_zero_slope, True)
 avg_comp_pow_full = mean(comp_pow_full)
+
+figure()
+plot(tstamps, avg_cpow_pdata, 'o')
+plot(tstamps, avg_dpow_pdata, 's')
+legend(['cpow', 'dpow'])
+
+figure()
+plot(tstamps, cpow_pdata, 'o')
+plot(tstamps, dpow_pdata, 's')
+legend(['cpow', 'dpow'])
 
 
 # Report
