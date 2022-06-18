@@ -24,16 +24,16 @@ print('Computed Air Rho: ', rho_calc)
 
 phys_var = {
     'mass'       : 73.5+9,
-    'rot_mass'   : 0.5 * 4.*pi**2 / 2.105**2,
-    'crr'        : 0.004,
+    'rot_mass'   : 0.15 * 4.*pi**2 / 2.105**2,
+    'crr'        : 0.0035,
     'cda'        : 0.22,
     'rho'        : rho_calc,
     'g'          : 9.81,
     'loss'       : 0.03,
-    'wind_v'     : 0.,
-    'wind_dir'   : 0. 
+    'wind_v'     : weather_data.wspd[0]/3.6,
+    'wind_dir'   : weather_data.wdir[0] 
 }
-comp_pow = calc_power_data(data, phys_var, calc_neg_watts, verbosity)
+comp_pow = calc_power_data(data, phys_var, False, calc_neg_watts, verbosity)
 avg_pow = mean(comp_pow)
 
 if verbosity > 0:

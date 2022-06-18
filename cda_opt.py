@@ -30,6 +30,7 @@ phys_var_0 = {
 power_factor = 1.0
 speed_factor = 1.0
 use_zero_slope = False
+use_wind_forecast = False # otherwise wind parameters will be "optimized"
 
 # to pick certain segments
 
@@ -42,29 +43,48 @@ use_zero_slope = False
 #segment_timestamps = [[datetime(2022, 5, 26, 16, 12, 34), datetime(2022, 5, 26, 16, 15, 38)], [datetime(2022, 5, 26, 16, 16, 8), datetime(2022, 5, 26, 16, 18, 53)],
 #                      [datetime(2022, 5, 26, 16, 19, 50), datetime(2022, 5, 26, 16, 23, 11)], [datetime(2022, 5, 26, 16, 23, 46), datetime(2022, 5, 26, 16, 26, 33)]]
 
-# Aero Test 06/22
+# Aero Test 15/06/22
 #segment_timestamps = [[datetime(2022, 6, 15, 17, 32, 54), datetime(2022, 6, 15, 17, 34, 48)], [datetime(2022, 6, 15, 17, 36, 7), datetime(2022, 6, 15, 17, 37, 53)],
 #                      [datetime(2022, 6, 15, 17, 50, 3), datetime(2022, 6, 15, 17, 51, 55)], [datetime(2022, 6, 15, 17, 53, 15), datetime(2022, 6, 15, 17, 55, 1)],
 #                      [datetime(2022, 6, 15, 18, 7, 19), datetime(2022, 6, 15, 18, 9, 27)], [datetime(2022, 6, 15, 18, 9, 55), datetime(2022, 6, 15, 18, 11, 51)]]
 
-segment_timestamps = [[datetime(2022, 6, 15, 17, 32, 54), datetime(2022, 6, 15, 17, 34, 48)], [datetime(2022, 6, 15, 17, 36, 7), datetime(2022, 6, 15, 17, 37, 53)],
-                      [datetime(2022, 6, 15, 17, 50, 3), datetime(2022, 6, 15, 17, 51, 55)], [datetime(2022, 6, 15, 17, 53, 15), datetime(2022, 6, 15, 17, 55, 1)]]
+#segment_timestamps = [[datetime(2022, 6, 15, 17, 32, 54), datetime(2022, 6, 15, 17, 34, 48)], [datetime(2022, 6, 15, 17, 36, 7), datetime(2022, 6, 15, 17, 37, 53)],
+#                      [datetime(2022, 6, 15, 17, 50, 3), datetime(2022, 6, 15, 17, 51, 55)], [datetime(2022, 6, 15, 17, 53, 15), datetime(2022, 6, 15, 17, 55, 1)]]
 #segment_timestamps = [[datetime(2022, 6, 15, 17, 39, 18), datetime(2022, 6, 15, 17, 41, 4)], [datetime(2022, 6, 15, 17, 42, 25), datetime(2022, 6, 15, 17, 44, 12)],
 #                      [datetime(2022, 6, 15, 17, 56, 33), datetime(2022, 6, 15, 17, 58, 19)], [datetime(2022, 6, 15, 17, 59, 45), datetime(2022, 6, 15, 18, 1, 29)]]
 
-#segment_timestamps = [[]]
+## Aero Test 18/06/22
+# Hoods
+#segment_timestamps = [[datetime(2022, 6, 18, 10, 8, 20), datetime(2022, 6, 18, 10, 11, 16)], [datetime(2022, 6, 18, 10, 11, 49),datetime(2022, 6, 18, 10, 14, 25)],
+#                      [datetime(2022, 6, 18, 10, 35, 5), datetime(2022, 6, 18, 10, 37, 47)], [datetime(2022, 6, 18, 10, 38, 35), datetime(2022, 6, 18, 10, 40, 54)]]
+
+# Drops
+#segment_timestamps = [[datetime(2022, 6, 18, 10, 14, 59), datetime(2022, 6, 18, 10, 17, 55)], [datetime(2022, 6, 18, 10, 18, 40), datetime(2022, 6, 18, 10, 21, 9)],
+#                      [datetime(2022, 6, 18, 10, 28, 32), datetime(2022, 6, 18, 10, 31, 12)], [datetime(2022, 6, 18, 10, 32, 6), datetime(2022, 6, 18, 10, 34, 17)]]
+
+# Aerobars
+#segment_timestamps = [[datetime(2022, 6, 18, 10, 21, 49), datetime(2022, 6, 18, 10, 24, 16)], [datetime(2022, 6, 18, 10, 25, 3), datetime(2022, 6, 18, 10, 27, 9)],
+#                      [datetime(2022, 6, 18, 10, 41, 56), datetime(2022, 6, 18, 10, 44, 33)], [datetime(2022, 6, 18, 10, 45, 19), datetime(2022, 6, 18, 10, 47, 33)]]
+
+
+segment_timestamps = [[]]
 
 # parameter search ranges
+#cda_min = 0.21
+#cda_max = 0.23
+#cda_delta = 0.001
 cda_min = 0.21
-cda_max = 0.24
-cda_delta = 0.001
+cda_max = 0.35
+cda_delta = 0.0025
 n_cda = int((cda_max - cda_min)/cda_delta) + 1
 
-crr_min = 0.003
-crr_max = 0.003
+crr_min = 0.00325
+crr_max = 0.00325
 crr_delta = 0.00025
 n_crr = int((crr_max - crr_min)/crr_delta) + 1
 
+
+# Wind v/dir ranges (will be ignored if use of wind forecast is enabled) 
 wind_v_min = 0.0
 wind_v_max = 5.55555556
 wind_v_delta = 0.277777777
@@ -89,6 +109,13 @@ for it, spd in enumerate(data['speed']):
 weather_data = get_weather_data(data)
 rho_calc = calc_rho_humid(weather_data.temp[0], weather_data.pres[0], weather_data.rhum[0])
 phys_var_0['rho'] = rho_calc
+if use_wind_forecast:
+    wind_v_min = weather_data.wspd[0]/3.6
+    wind_v_max = weather_data.wspd[0]/3.6
+    n_wind_v = 1
+    wind_dir_min = weather_data.wdir[0]
+    wind_dir_max = weather_data.wdir[0]
+    n_wind_dir = 1
 
 # prepare data segments
 data_segments = []
@@ -100,7 +127,7 @@ for seg in segment_timestamps:
             print('Error: More than one segment in list, but one was empty!')
         data_segments.append(data)
 
-min_msq = -1.
+min_cost = -1.
 phys_var_best = phys_var_0
 for cda in linspace(cda_min, cda_max, n_cda, True):
     for crr in linspace(crr_min, crr_max, n_crr, True):
@@ -114,20 +141,20 @@ for cda in linspace(cda_min, cda_max, n_cda, True):
                 phys_var['wind_v'] = wind_v
                 phys_var['wind_dir'] = wind_dir
 
-                msq = 0.
+                cost = 0.
                 np = 0
                 for data_seg in data_segments:
                     comp_pow = calc_power_data_C(lib_power, data_seg, phys_var, use_zero_slope, True)
-                    sq, n = calc_pdiff_C(lib_pdiff, data_seg['power'], data_seg['speed'], comp_pow)
-                    msq += sq
+                    seg_cost, n = calc_pdiff_C(lib_pdiff, data_seg['power'], data_seg['speed'], comp_pow)
+                    cost += seg_cost
                     np += n
-                msq /= np
+                cost /= np
 
-                if msq < min_msq or min_msq < 0:
+                if cost < min_cost or min_cost < 0:
                     phys_var_best = phys_var.copy()
-                    min_msq = msq
+                    min_cost = cost
 
-                print('cda: ', cda, ' crr: ', crr, ' wind_v: ', wind_v, ' wind_dir: ', wind_dir, ' rmsq: ', sqrt(msq))
+                print('cda: ', cda, ' crr: ', crr, ' wind_v: ', wind_v, ' wind_dir: ', wind_dir, ' cost: ', cost)
 
 
 # Compute various power averages
@@ -140,7 +167,6 @@ avg_cpow_pdata = []
 avg_dpow_pdata = []
 for data_seg in data_segments:
     comp_pow_seg = calc_power_data_C(lib_power, data_seg, phys_var_best, use_zero_slope, True)
-#    comp_pow_seg = calc_power_data(data_seg, phys_var_best, use_zero_slope, True, 2)
     mean_comp_pow = mean(comp_pow_seg)
     mean_data_pow = mean(data_seg['power'])
     avg_comp_pow_segs += mean_comp_pow
@@ -179,7 +205,7 @@ print('crr:      ', phys_var_best['crr'])
 print('wind_v:   ', phys_var_best['wind_v'])
 print('wind_dir: ', phys_var_best['wind_dir'])
 print()
-print('Min RMSQ: ', sqrt(min_msq))
+print('Min Cost: ', min_cost)
 
 print('Calculated segment average power: ', avg_comp_pow_segs)
 print('Measured segment average power: ', avg_data_pow_segs)

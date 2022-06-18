@@ -55,6 +55,8 @@ def parse_fitfile(filename, entry_dict, verbose = False):
                 cur_dist = entry.value
             elif entry.name == 'altitude':
                 cur_alt = entry.value
+            if entry.name == 'distance' and entry.value == None:
+                print("Warning: Distance entry contained value None.")
 
         # check for discontinuity, compute time step, distance and height step
         time_diff = 0
@@ -151,6 +153,8 @@ def parse_fitfile(filename, entry_dict, verbose = False):
                 slope = h_diff / d_diff
             else:
                 slope = 0
+                if h_diff != 0:
+                    print("Warning: Altitude changed without change in distance, so slope cannot be computed (set to 0).")
             data['slope'].append(slope)
 
         cont_it += 1  # increase continuous iteration counter

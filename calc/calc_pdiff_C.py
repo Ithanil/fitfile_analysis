@@ -8,13 +8,13 @@ def calc_pdiff_C(lib, data_pow, data_v, comp_pow, no_filter = False):
 
     # prepare arguments
     ndata = len(data_pow)
-    dsq = c_double()
+    cost = c_double()
 
     # call function
-    np = calc_pdiff_sq_np_cfun(c_int(ndata), pointer(dsq),
+    np = calc_pdiff_sq_np_cfun(c_int(ndata), pointer(cost),
                      c_void_p(data_pow.ctypes.data),
                      c_void_p(data_v.ctypes.data),
                      c_void_p(comp_pow.ctypes.data),
                      c_int(no_filter))
 
-    return double(dsq), np
+    return double(cost), np
