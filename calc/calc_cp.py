@@ -12,8 +12,6 @@ def update_wp_bal(wp_bal, po, tdiff, cp, wp):
     wp_bal_new = wp_bal + calc_wp_diff(wp_bal, po, tdiff, cp, wp)
     if wp_bal_new > wp:
         return wp
-    if wp_bal_new < 0:
-        return 0.
     return wp_bal_new
 
 # MPA at a given WPrime balance
