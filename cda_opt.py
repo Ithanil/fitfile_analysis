@@ -3,11 +3,13 @@ from pylab import *
 from ctypes import cdll
 from datetime import datetime
 
-from parse.parse_fitfile import parse_fitfile, extract_data_segment_secs, extract_data_segment_time
+from parse.parse_fitfile import parse_fitfile
+from parse.parse_laps import parse_laps
+from parse.extract_segments import extract_data_segment_secs, extract_data_segment_time
+from parse.get_weather_data import get_weather_data
 from calc.calc_power_C import calc_power_data_C
 #from calc.calc_power import calc_power_data
 from calc.calc_pdiff_C import calc_pdiff_C
-from parse.get_weather_data import get_weather_data
 from calc.calc_rho import calc_rho_humid
 
 # load C libraries
@@ -15,7 +17,7 @@ lib_power = cdll.LoadLibrary("calc/calc_power.o")
 lib_pdiff = cdll.LoadLibrary("calc/calc_pdiff.o")
 
 phys_var_0 = {
-    'mass'        : 73+9,
+    'mass'        : 73+11,
     'rot_mass'    : 0.15 * 4.*pi**2 / 2.105**2,
     'crr'         : 0.0035,
     'cda'         : 0.22,
@@ -31,6 +33,9 @@ power_factor = 1.0
 speed_factor = 1.0
 use_zero_slope = False
 use_wind_forecast = False # otherwise wind parameters will be "optimized"
+
+## extract lap data from fit file
+lap_data, lap_timestamps = parse_laps(sys.argv[1], False)
 
 # to pick certain segments
 
@@ -67,20 +72,28 @@ use_wind_forecast = False # otherwise wind parameters will be "optimized"
 #                      [datetime(2022, 6, 18, 10, 41, 56), datetime(2022, 6, 18, 10, 44, 33)], [datetime(2022, 6, 18, 10, 45, 19), datetime(2022, 6, 18, 10, 47, 33)]]
 
 
+## Rolling Test 12/07/22
+#segment_numbers = [1, 3, 5, 7, 9, 11, 13, 15]
+#segment_timestamps = []
+#for num in segment_numbers:
+#    segment_timestamps.append(lap_timestamps[num])
+
 segment_timestamps = [[]]
 
 # parameter search ranges
-#cda_min = 0.21
-#cda_max = 0.23
+cda_min = 0.2
+cda_max = 0.23
+cda_delta = 0.001
+#cda_min = 0.27
+#cda_max = 0.31
 #cda_delta = 0.001
-cda_min = 0.21
-cda_max = 0.35
-cda_delta = 0.0025
 n_cda = int((cda_max - cda_min)/cda_delta) + 1
 
-crr_min = 0.00325
-crr_max = 0.00325
-crr_delta = 0.00025
+crr_min = 0.0045
+crr_max = 0.0045
+#crr_min = 0.004
+#crr_max = 0.005
+crr_delta = 0.0001
 n_crr = int((crr_max - crr_min)/crr_delta) + 1
 
 
@@ -183,14 +196,18 @@ comp_pow_full = calc_power_data_C(lib_power, data, phys_var_best, use_zero_slope
 avg_comp_pow_full = mean(comp_pow_full)
 
 figure()
-plot(tstamps, avg_cpow_pdata, 'o')
 plot(tstamps, avg_dpow_pdata, 's')
-legend(['cpow', 'dpow'])
+plot(tstamps, avg_cpow_pdata, 'o')
+xlabel('Time')
+ylabel('Power [W]')
+legend(['Data', 'Simulation'])
 
 figure()
-plot(tstamps, cpow_pdata, 'o')
 plot(tstamps, dpow_pdata, 's')
-legend(['cpow', 'dpow'])
+plot(tstamps, cpow_pdata, 'o')
+xlabel('Time')
+ylabel('Power [W]')
+legend(['Data', 'Simulation'])
 
 
 # Report
@@ -235,5 +252,8 @@ plot(comp_pow_full, '+')
 figure()
 plot(data_smooth)
 plot(comp_smooth)
+xlabel('Time [s]')
+ylabel('Power [W]')
+legend(['Data', 'Simulation'])
 
 show()

@@ -1,28 +1,19 @@
 import fitparse
 from numpy import array, double
 
-def parse_laps(filename, entry_dict, verbose = False):
+def parse_laps(filename, verbose = False):
     fitfile = fitparse.FitFile(filename)
-
-    data_entry_list = [entry_name for entry_name in entry_dict.keys()] # build list of entries for which data will be collected
-    if 'timestamp' in entry_dict.keys():
-        print('Error: Special quantity "timestamp" was present in entry_dict.')
-        exit()
-    data_entry_list.append('timestamp')
 
     # setup data list and iteration counter
     data = []
     it = 0
 
     # Main loop for data extraction
-    for lap in fitfile.get_messages("laps"):
+    for lap in fitfile.get_messages("lap"):
         data.append({}) # create empty dict for lap
 
         # extract all data from lap
         for entry in lap:
-            if entry.name not in data_entry_list:
-                continue  # skip irrelevant entries
-
             # --- Pre-Processing of entry values ---
 
             # convert 'None' values to 0
@@ -60,16 +51,11 @@ def parse_laps(filename, entry_dict, verbose = False):
             # put desired entry data into dictionary
             data[it][entry.name] = data_value
 
-        # check if all desired entries were present
-        present_entries = [entry.name for entry in lap]
-        for entry in entry_dict.keys():
-            if entry not in present_entries:
-                print('Warning: Desired entry "', entry, '" was not present.')
-                data[it][entry] = None
-        if 'timestamp' not in present_entries:
-            print('Error: Timestamp entry was not present.')
-            exit()
-
         it += 1  # increase iteration counter
 
-    return data
+    # create list of start/end timestamps
+    timestamps = []
+    for lap in data:
+        timestamps.append([lap['start_time'], lap['timestamp']])
+
+    return data, timestamps
