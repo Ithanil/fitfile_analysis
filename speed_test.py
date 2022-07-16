@@ -24,7 +24,7 @@ slope = 0.
 dir = 0.
 
 phys_var_1 = {
-    'mass'       : 72+9.5,
+    'mass'       : 72+10,
     'crr'        : 0.0043,
     'cda'        : 0.28,
     'loss'       : 0.03,
@@ -35,9 +35,9 @@ phys_var_1 = {
 }
 
 phys_var_2 = {
-    'mass'       : 72+9.5,
-    'crr'        : 0.0043,
-    'cda'        : 0.29,
+    'mass'       : 72+10,
+    'crr'        : 0.009,
+    'cda'        : 0.28,
     'loss'       : 0.03,
     'g'          : g,
     'rho'        : rho,
