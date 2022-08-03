@@ -1,6 +1,3 @@
-import sys
-
-from parse.parse_fitfile import parse_fitfile
 from pylab import *
 
 def calc_direction(Alat, Along, Blat, Blong):
