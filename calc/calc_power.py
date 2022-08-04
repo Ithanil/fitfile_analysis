@@ -1,4 +1,4 @@
-from pylab import *
+from numpy import array, double
 
 def calc_direction(Alat, Along, Blat, Blong):
     Alat_rad = Alat/180.*pi
@@ -61,26 +61,20 @@ def calc_power_data(data, phys_var, use_zero_slope = False, calc_neg_watts = Tru
         else:
             tdiff = 1.
 
-        # compute smoothed direction
-        if it == ndata - 1: # last step
+        # compute direction
+        if it > 0: # // regular step
             dir = calc_direction(data['position_lat'][it-1], data['position_long'][it-1], data['position_lat'][it], data['position_long'][it])
-        elif it > 0: # regular step
-            dir = calc_direction(data['position_lat'][it-1], data['position_long'][it-1], data['position_lat'][it+1], data['position_long'][it+1])
         else: # first step: assume perfect cross wind
             dir = phys_var['wind_dir'] + 90.
 
-        # compute smoothed slope
-        smooth_slope = 0.
-        if not use_zero_slope:
-            if it == ndata - 1: # last step
-                smooth_slope = 0.5*(data['slope'][it-1] + data['slope'][it])
-            elif it > 0: # regular step
-                smooth_slope = 0.333333333*(data['slope'][it-1] + data['slope'][it] + data['slope'][it+1])
-            else: # first step
-                smooth_slope = 0.5*(data['slope'][it] + data['slope'][it+1])
+        # apply zero-slope mode
+        if use_zero_slope:
+            slope_it = 0.
+        else:
+            slope_it = data['slope'][it]
 
         # compute power
-        pow = calc_power(v_new, v_old, tdiff, dir, smooth_slope, phys_var, verbosity)
+        pow = calc_power(v_new, v_old, tdiff, dir, slope_it, phys_var, verbosity)
         if pow > 0 or calc_neg_watts: # option to clamp power to positive values
             comp_pow.append(pow)
         else:

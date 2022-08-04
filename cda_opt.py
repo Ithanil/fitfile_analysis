@@ -4,6 +4,7 @@ from ctypes import cdll
 from datetime import datetime
 
 from parse.parse_fitfile import parse_fitfile
+from parse.filter_data import filter_data
 from parse.parse_laps import parse_laps
 from parse.extract_segments import extract_data_segment_secs, extract_data_segment_time
 from parse.get_weather_data import get_weather_data
@@ -17,10 +18,10 @@ lib_power = cdll.LoadLibrary("calc/calc_power.o")
 lib_pdiff = cdll.LoadLibrary("calc/calc_pdiff.o")
 
 phys_var_0 = {
-    'mass'        : 73+11,
+    'mass'        : 73+10.5,
     'rot_mass'    : 0.15 * 4.*pi**2 / 2.105**2,
-    'crr'         : 0.0035,
-    'cda'         : 0.22,
+    'crr'         : 0.0045,
+    'cda'         : 0.225,
     'rho'         : 1.225,
     'g'           : 9.81,
     'loss'        : 0.03,
@@ -93,7 +94,7 @@ crr_min = 0.0045
 crr_max = 0.0045
 #crr_min = 0.004
 #crr_max = 0.005
-crr_delta = 0.0001
+crr_delta = 0.00025
 n_crr = int((crr_max - crr_min)/crr_delta) + 1
 
 
@@ -116,7 +117,7 @@ for it, pow in enumerate(data['power']):
     data['power'][it] = power_factor*pow
 for it, spd in enumerate(data['speed']):
     data['speed'][it] = speed_factor*spd
-
+data = filter_data(data, {'speed' : (5, 1, 'nearest'), 'power' : (3, 1, 'constant'), 'position_lat' : (5, 1, 'interp'), 'position_long' : (5, 1, 'interp'), 'slope' : (30, 1, 'constant')})
 
 # get weather data and compute rho
 weather_data = get_weather_data(data)

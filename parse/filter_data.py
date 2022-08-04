@@ -8,7 +8,7 @@ def filter_data(data, entry_dict):
     data_filt = {}
     for key in data.keys():
         if key in entry_dict.keys():
-            data_filt[key] = savgol_filter(data[key], entry_dict[key][0], entry_dict[key][1])
+            data_filt[key] = savgol_filter(data[key], entry_dict[key][0], entry_dict[key][1], mode = entry_dict[key][2])
         else:
             data_filt[key] = data[key].copy()
 
