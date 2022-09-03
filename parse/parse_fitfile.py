@@ -138,8 +138,12 @@ def parse_fitfile(filename, entry_dict, verbose = False):
         present_entries = [entry.name for entry in record]
         for entry in entry_dict.keys():
             if entry not in present_entries:
-                print('Error: Desired entry "', entry, '" was not present.')
-                exit()
+                if entry_dict[entry] == []:
+                    print('Warning: Desired entry "', entry, '" was not present. Assuming a value of 0.')
+                    data[entry].append(0.)
+                else:
+                    print('Error: Desired entry "', entry, '" was not present. This is a fatal error due to desired moving average computation.')
+                    exit()
         if 'timestamp' not in present_entries:
             print('Error: Timestamp entry was not present.')
             exit()

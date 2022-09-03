@@ -1,5 +1,6 @@
 import sys
 from pylab import *
+from scipy.signal import savgol_filter
 from ctypes import cdll
 from datetime import datetime
 
@@ -18,7 +19,7 @@ lib_power = cdll.LoadLibrary("calc/calc_power.o")
 lib_pdiff = cdll.LoadLibrary("calc/calc_pdiff.o")
 
 phys_var_0 = {
-    'mass'        : 73+10.5,
+    'mass'        : 71+10.5,
     'rot_mass'    : 0.15 * 4.*pi**2 / 2.105**2,
     'crr'         : 0.0045,
     'cda'         : 0.225,
@@ -90,11 +91,11 @@ cda_delta = 0.001
 #cda_delta = 0.001
 n_cda = int((cda_max - cda_min)/cda_delta) + 1
 
-crr_min = 0.0045
-crr_max = 0.0045
+crr_min = 0.00425
+crr_max = 0.00425
 #crr_min = 0.004
 #crr_max = 0.005
-crr_delta = 0.00025
+crr_delta = 0.0001
 n_crr = int((crr_max - crr_min)/crr_delta) + 1
 
 
@@ -193,7 +194,7 @@ for data_seg in data_segments:
         avg_dpow_pdata.append(mean_data_pow)
 avg_comp_pow_segs /= len(data_segments)
 avg_data_pow_segs /= len(data_segments)
-comp_pow_full = calc_power_data_C(lib_power, data, phys_var_best, use_zero_slope, True)
+comp_pow_full = calc_power_data_C(lib_power, data, phys_var_best, use_zero_slope, False)
 avg_comp_pow_full = mean(comp_pow_full)
 
 figure()
@@ -231,20 +232,8 @@ print('Calculated total average power: ', avg_comp_pow_full)
 print('Measured total average power: ', mean(data['power']))
 
 win_len = 60
-data_smooth = []
-comp_smooth = []
-it = 0
-while it < len(comp_pow_full) - win_len + 1:
-    win_dat = data['power'][it : it + win_len]
-    win_comp = comp_pow_full[it : it + win_len]
-
-    avg_dat = mean(win_dat)
-    avg_comp = mean(win_comp)
-
-    data_smooth.append(avg_dat)
-    comp_smooth.append(avg_comp)
-
-    it += 1
+data_smooth = savgol_filter(data['power'], win_len, 1, mode = 'constant', cval = 0.)
+comp_smooth = savgol_filter(comp_pow_full, win_len, 1, mode = 'constant', cval = 0.)
 
 figure()
 plot(data['power'], 'x')
