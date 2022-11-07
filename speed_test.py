@@ -4,46 +4,47 @@ from pylab import *
 from calc.calc_speed import calc_speed_static
 from calc.calc_power import calc_power
 from parse.get_weather_data import get_weather_data
-from calc.calc_rho import calc_rho_humid
+from calc.calc_rho import calc_rho_humid, calc_rho_dry
 
 verbosity = 0
 
 
 # get weather
 #weather_data = get_weather_data(data)
-#rho_calc = calc_rho_humid(weather_data.temp[0], weather_data.pres[0], weather_data.rhum[0])
-#print('Weather Data:')
-#print(weather_data)
-#print('Computed Air Rho: ', rho_calc)
+#rho_calc_1 = calc_rho_humid(20, 1013, 50)
+#rho_calc_2 = calc_rho_humid(3, 1013, 50)
+rho_calc_1 = calc_rho_dry(30, 1013)
+rho_calc_2 = calc_rho_dry(0, 1013)
+print('Computed Warm Rho: ', rho_calc_1)
+print('Computer Cold Rho: ', rho_calc_2)
 
 g = 9.81
-rho = 1.225
-wind_v = 2.
-wind_dir = 50.
+wind_v = 0.
+wind_dir = 0.
 
 slope = 0. # only positive slopes will work atm!!!
 dir = 0.
 
 phys_var_1 = {
-    'mass'       : 72+10,
+    'mass'       : 70+10,
     'rot_mass'   : 0.15 * 4.*pi**2 / 2.105**2,
-    'crr'        : 0.0043,
-    'cda'        : 0.28,
+    'crr'        : 0.0045,
+    'cda'        : 0.2,
     'loss'       : 0.03,
     'g'          : g,
-    'rho'        : rho,
+    'rho'        : rho_calc_1,
     'wind_v'     : wind_v,
     'wind_dir'   : wind_dir
 }
 
 phys_var_2 = {
-    'mass'       : 72+10,
+    'mass'       : 70+10,
     'rot_mass'   : 0.15 * 4.*pi**2 / 2.105**2,
-    'crr'        : 0.005,
-    'cda'        : 0.28,
+    'crr'        : 0.0045,
+    'cda'        : 0.2,
     'loss'       : 0.03,
     'g'          : g,
-    'rho'        : rho,
+    'rho'        : rho_calc_2,
     'wind_v'     : wind_v,
     'wind_dir'   : wind_dir
 }
