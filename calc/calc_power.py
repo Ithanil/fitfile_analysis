@@ -1,4 +1,4 @@
-from numpy import array, double
+from numpy import *
 
 def calc_direction(Alat, Along, Blat, Blong):
     Alat_rad = Alat/180.*pi
