@@ -19,7 +19,7 @@ lib_power = cdll.LoadLibrary("calc/calc_power.o")
 lib_pdiff = cdll.LoadLibrary("calc/calc_pdiff.o")
 
 phys_var_0 = {
-    'mass'        : 71+10.5,
+    'mass'        : 70+10.,
     'rot_mass'    : 0.15 * 4.*pi**2 / 2.105**2,
     'crr'         : 0.0045,
     'cda'         : 0.225,
@@ -91,8 +91,8 @@ cda_delta = 0.001
 #cda_delta = 0.001
 n_cda = int((cda_max - cda_min)/cda_delta) + 1
 
-crr_min = 0.00425
-crr_max = 0.00425
+crr_min = 0.0045
+crr_max = 0.0045
 #crr_min = 0.004
 #crr_max = 0.005
 crr_delta = 0.0001
