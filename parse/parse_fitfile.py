@@ -80,6 +80,21 @@ def parse_fitfile(filename, entry_dict, verbose = False):
         # increment total seconds
         tot_sec += time_diff
 
+        # check if all desired entries are present
+        present_entries = [entry.name for entry in record]
+        for entry in entry_dict.keys():
+            if entry not in present_entries:
+                print('Error: Desired entry "', entry,
+                      '" was not present. Assuming a value of 0 for the data and all moving average windows will reset.')
+                data[entry].append(0.)
+                # reset moving average computation
+                for ma_entry in ma_entry_list:
+                    for ch in cur_hist[ma_entry]:
+                        ch.fill(0.)
+                cont_it = -1  # will be incremented to 0 at the end of iteration, prevents ma computation for this iteration
+        if 'timestamp' not in present_entries:
+            print('Error: Timestamp entry was not present.')
+            exit()
 
         # extract all data from record
         for entry in record:
@@ -124,7 +139,7 @@ def parse_fitfile(filename, entry_dict, verbose = False):
             data[entry.name].append(data_value)
 
             # if entry is desired, deal with moving averages
-            if entry.name in ma_entry_list:
+            if entry.name in ma_entry_list and cont_it >= 0:
                 # add to current history for moving averages
                 for it_ma, ma_len in enumerate(entry_dict[entry.name]):
                     cur_hist[entry.name][it_ma][cont_it % ma_len] = data_value
@@ -133,20 +148,6 @@ def parse_fitfile(filename, entry_dict, verbose = False):
                     if cont_it >= ma_len:
                         mov_avgs[entry.name][it_ma][0].append(tot_sec)
                         mov_avgs[entry.name][it_ma][1].append(sum(cur_hist[entry.name][it_ma])/ma_len)
-
-        # check if all desired entries were present
-        present_entries = [entry.name for entry in record]
-        for entry in entry_dict.keys():
-            if entry not in present_entries:
-                if entry_dict[entry] == []:
-                    print('Warning: Desired entry "', entry, '" was not present. Assuming a value of 0.')
-                    data[entry].append(0.)
-                else:
-                    print('Error: Desired entry "', entry, '" was not present. This is a fatal error due to desired moving average computation.')
-                    exit()
-        if 'timestamp' not in present_entries:
-            print('Error: Timestamp entry was not present.')
-            exit()
 
         # add seconds data
         data['seconds'].append(tot_sec)
