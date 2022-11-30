@@ -137,5 +137,7 @@ dmypy.json
 # ignore all fit files
 *.fit
 
-# ignore HRV data folder
+# ignore data folders
+fitfiles/
 hrv_data/
+files_powercomp/

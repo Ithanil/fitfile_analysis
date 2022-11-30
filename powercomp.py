@@ -45,31 +45,31 @@ for entry in entry_dict:
             its += 1
 
 # compute averages and mean, mean absolute and root mean square differences
-#labels = ['raw data', 'mov avg ' + str(ma_len_0) + 's', 'mov avg '
-#          + str(ma_len_1) + 's', 'mov avg ' + str(ma_len_2) + 's']
-#for name in coupled_data.keys():
-#    print('')
-#    print(name + ':')
-#    for it_label, cdat in enumerate(coupled_data[name]):
-#        avg0 = 0.
-#        avg1 = 0.
-#        md = 0.
-#        mad = 0.
-#        rmsd = 0.
-#        datlen = len(cdat[0])
-#        for it in range(datlen):
-#            avg0 += cdat[1][it]
-#            avg1 += cdat[2][it]
-#            diff = cdat[1][it] - cdat[2][it]
-#            md += diff
-#            mad += abs(diff)
-#            rmsd += diff**2
-#        avg0 /= datlen
-#        avg1 /= datlen
-#        md /= datlen
-#        mad /= datlen
-#        rmsd = sqrt(rmsd/datlen)
-#        print(labels[it_label], (avg0, avg1), md, mad, rmsd)
+labels = ['raw data', 'mov avg ' + str(ma_lens[0]) + 's', 'mov avg '
+          + str(ma_lens[1]) + 's', 'mov avg ' + str(ma_lens[2]) + 's']
+for name in coupled_data.keys():
+    print('')
+    print(name + ':')
+    for it_label, cdat in enumerate(coupled_data[name]):
+        avg1 = 0.
+        avg2 = 0.
+        md = 0.
+        mad = 0.
+        rmsd = 0.
+        datlen = len(cdat[0])
+        for it in range(datlen):
+            avg1 += cdat[1][it]
+            avg2 += cdat[2][it]
+            diff = cdat[1][it] - cdat[2][it]
+            md += diff
+            mad += abs(diff)
+            rmsd += diff**2
+        avg1 /= datlen
+        avg2 /= datlen
+        md /= datlen
+        mad /= datlen
+        rmsd = sqrt(rmsd/datlen)
+        print(labels[it_label], (avg1, avg2), md, mad, rmsd)
 
 
 for entry in coupled_data.keys():
