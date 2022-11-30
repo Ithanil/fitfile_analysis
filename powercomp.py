@@ -34,14 +34,14 @@ for entry in entry_dict:
         its = 0
         for series_1, series_2 in [((data_1['seconds'], data_1[entry]), (data_2['seconds'], data_2[entry])), (mavgs_1[entry][0], mavgs_2[entry][0]),
                                    (mavgs_1[entry][1], mavgs_2[entry][1]), (mavgs_1[entry][2], mavgs_2[entry][2])]:
-            itd1 = 0
-            for itd0, t0 in enumerate(series_1[0]):
-                while series_2[0][itd1] < t0 and itd1 < (len(series_2[0]) - 1):
-                    itd1 += 1
-                if series_2[0][itd1] == t0:
-                    coupled_data[entry][its][0].append(t0)
-                    coupled_data[entry][its][1].append(series_1[1][itd0])
-                    coupled_data[entry][its][2].append(series_2[1][itd1])
+            itd2 = 0
+            for itd1, t1 in enumerate(series_1[0]):
+                while series_2[0][itd2] < t1 and itd2 < (len(series_2[0]) - 1):
+                    itd2 += 1
+                if series_2[0][itd2] == t1:
+                    coupled_data[entry][its][0].append(t1)
+                    coupled_data[entry][its][1].append(series_1[1][itd1])
+                    coupled_data[entry][its][2].append(series_2[1][itd2])
             its += 1
 
 # compute averages and mean, mean absolute and root mean square differences
