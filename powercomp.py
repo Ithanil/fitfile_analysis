@@ -3,7 +3,7 @@ from parse.parse_fitfile import parse_fitfile
 from pylab import *
 
 # settings
-ma_lens = (5, 30, 180)
+ma_lens = (10, 30, 90)
 entry_dict = {'power' : ma_lens, 'heart_rate' : ma_lens}
 
 # load&parse fit files
@@ -20,11 +20,18 @@ for entry in entry_dict.keys():
             mavgs_2[entry][it_m][0][it] += time_shift
 
 # create scaled power array for second file
-if len(sys.argv) >= 5:
-    scaling_fac = float(sys.argv[4])
-else:
-    scaling_fac = 1.0
+scaling_fac = float(sys.argv[4])
 pw_2_scaled = scaling_fac*array([data_2['power'], mavgs_2['power'][0][1], mavgs_2['power'][1][1], mavgs_2['power'][2][1]], dtype=object)
+
+# read optional start and end time
+if len(sys.argv) >= 6:
+    start_time = float(sys.argv[5])
+else:
+    start_time = data_1['seconds'][0]
+if len(sys.argv) >= 7:
+    end_time = float(sys.argv[6])
+else:
+    end_time = data_1['seconds'][-1]
 
 # create coupled data set only with data points from times where there exists an entry in both data series / moving averages
 coupled_data = {}
@@ -36,12 +43,24 @@ for entry in entry_dict:
                                    (mavgs_1[entry][1], mavgs_2[entry][1]), (mavgs_1[entry][2], mavgs_2[entry][2])]:
             itd2 = 0
             for itd1, t1 in enumerate(series_1[0]):
+                # check start/end time condition
+                if t1 < start_time:
+                    continue
+                if t1 > end_time:
+                    break
+
+                # skip to sync times
                 while series_2[0][itd2] < t1 and itd2 < (len(series_2[0]) - 1):
                     itd2 += 1
+
+                # couple data
                 if series_2[0][itd2] == t1:
                     coupled_data[entry][its][0].append(t1)
                     coupled_data[entry][its][1].append(series_1[1][itd1])
-                    coupled_data[entry][its][2].append(series_2[1][itd2])
+                    if entry == 'power':
+                        coupled_data[entry][its][2].append(scaling_fac*series_2[1][itd2])
+                    else:
+                        coupled_data[entry][its][2].append(series_2[1][itd2])
             its += 1
 
 # compute averages and mean, mean absolute and root mean square differences
@@ -74,33 +93,23 @@ for name in coupled_data.keys():
 
 for entry in coupled_data.keys():
     figure()
-    title(entry)
-    plot(coupled_data[entry][0][0], coupled_data[entry][0][1])
-    plot(coupled_data[entry][0][0], coupled_data[entry][0][2])
+    suptitle(entry)
+    for it in range(4):
+        subplot(2, 2, it+1)
+        plot(coupled_data[entry][it][0], coupled_data[entry][it][1])
+        plot(coupled_data[entry][it][0], coupled_data[entry][it][2])
+        if it == 1:
+            legend([sys.argv[1], sys.argv[2]])
+
+for it_ma, ma_len in enumerate(ma_lens):
+    figure()
+    suptitle('Powers ' + str(ma_len) + ' Sec MA, with&without scaling')
+    subplot(2, 1, 1)
+    plot(mavgs_1['power'][it_ma][0], mavgs_1['power'][it_ma][1])
+    plot(mavgs_2['power'][it_ma][0], pw_2_scaled[it_ma + 1])
     legend([sys.argv[1], sys.argv[2]])
-
-figure()
-title('Powers ' + str(ma_lens[0]) + ' Sec MA')
-plot(mavgs_1['power'][0][0], mavgs_1['power'][0][1])
-plot(mavgs_2['power'][0][0], mavgs_2['power'][0][1])
-legend([sys.argv[1], sys.argv[2]])
-
-figure()
-title('Powers '  + str(ma_lens[1]) + ' Sec MA')
-plot(mavgs_1['power'][1][0], mavgs_1['power'][1][1])
-plot(mavgs_2['power'][1][0], mavgs_2['power'][1][1])
-legend([sys.argv[1], sys.argv[2]])
-
-figure()
-title('Powers with Scaling, ' + str(ma_lens[1]) + ' Sec MA')
-plot(mavgs_1['power'][1][0], mavgs_1['power'][1][1])
-plot(mavgs_2['power'][1][0], pw_2_scaled[2])
-legend([sys.argv[1], sys.argv[2]])
-
-figure()
-title('Powers with Scaling, ' + str(ma_lens[2]) + ' Sec MA')
-plot(mavgs_1['power'][2][0], mavgs_1['power'][2][1])
-plot(mavgs_2['power'][2][0], pw_2_scaled[3])
-legend([sys.argv[1], sys.argv[2]])
+    subplot(2, 1, 2)
+    plot(mavgs_1['power'][it_ma][0], mavgs_1['power'][it_ma][1])
+    plot(mavgs_2['power'][it_ma][0], mavgs_2['power'][it_ma][1])
 
 show()
