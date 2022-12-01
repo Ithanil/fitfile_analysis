@@ -66,6 +66,7 @@ for entry in entry_dict:
 # compute averages and mean, mean absolute and root mean square differences
 labels = ['raw data', 'mov avg ' + str(ma_lens[0]) + 's', 'mov avg '
           + str(ma_lens[1]) + 's', 'mov avg ' + str(ma_lens[2]) + 's']
+pw_diffs = [[], [], [], []]
 for name in coupled_data.keys():
     print('')
     print(name + ':')
@@ -79,7 +80,9 @@ for name in coupled_data.keys():
         for it in range(datlen):
             avg1 += cdat[1][it]
             avg2 += cdat[2][it]
-            diff = cdat[1][it] - cdat[2][it]
+            diff = cdat[2][it] - cdat[1][it]
+            if name == 'power':
+                pw_diffs[it_label].append(diff)
             md += diff
             mad += abs(diff)
             rmsd += diff**2
@@ -89,6 +92,7 @@ for name in coupled_data.keys():
         mad /= datlen
         rmsd = sqrt(rmsd/datlen)
         print(labels[it_label], (avg1, avg2), md, mad, rmsd)
+        pw_diffs[it_label] = array(pw_diffs[it_label])
 
 
 for entry in coupled_data.keys():
@@ -100,6 +104,12 @@ for entry in coupled_data.keys():
         plot(coupled_data[entry][it][0], coupled_data[entry][it][2])
         if it == 1:
             legend([sys.argv[1], sys.argv[2]])
+
+figure()
+for it_label, pdiff in enumerate(pw_diffs):
+    subplot(2, 2, it_label + 1)
+    title(labels[it_label])
+    plot(coupled_data['power'][it_label][0], pdiff)
 
 for it_ma, ma_len in enumerate(ma_lens):
     figure()
